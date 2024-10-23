@@ -26,11 +26,22 @@ Este projeto implementa um gerenciador de energia utilizando a técnica de apren
 ```
 energy_management_qlearning_project/
 │
-├── main.py          # Arquivo principal para iniciar a aplicação
-├── models.py        # Lógica de negócio, incluindo o ambiente e o agente de Q-learning
-├── views.py         # Interface gráfica (Tkinter)
-├── requirements.txt # Arquivo de dependências
-└── README.md        # Instruções do projeto
+├── src/
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── energyManagementEnvironment.py
+│   │   └── qLearningAgent.py
+│   │
+│   ├── views/
+│   │   ├── __init__.py
+│   │   ├── EnergyManagementApp.py
+│   │   └── textRedirector.py
+│   │
+│   └── main.py
+│
+├── requirements.txt
+└── README.md
+
 ```
 
 ## Instalação e Configuração
