@@ -107,14 +107,6 @@ energy_management_qlearning_project/
 - **Console**: Console integrado para monitorar o progresso das operações.
 - **Gráficos**: Visualize o progresso do agente com gráficos de recompensa e consumo.
 
-## Capturas de Tela
-
-Adicione aqui capturas de tela da interface, simulação ou gráficos, caso deseje mostrar o visual do projeto para os usuários.
-
-## Contribuições
-
-Contribuições são bem-vindas! Sinta-se à vontade para enviar issues e pull requests.
-
 ## Licença
 
 Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
