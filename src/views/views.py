@@ -8,7 +8,7 @@ import sys
 import os
 import csv
 import pickle
-from models import EnergyManagementEnvironment, QLearningAgent
+from models.models import EnergyManagementEnvironment, QLearningAgent
 
 
 # Redirecionamento de stdout para a área de texto

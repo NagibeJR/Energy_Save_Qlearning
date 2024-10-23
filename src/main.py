@@ -1,6 +1,5 @@
-# main.py
 import tkinter as tk
-from views import EnergyManagementApp
+from views.views import EnergyManagementApp
 
 
 def main():
