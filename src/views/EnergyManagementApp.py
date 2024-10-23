@@ -1,4 +1,3 @@
-# views.py
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.scrolledtext import ScrolledText
@@ -8,23 +7,10 @@ import sys
 import os
 import csv
 import pickle
-from models.models import EnergyManagementEnvironment, QLearningAgent
 
-
-# Redirecionamento de stdout para a área de texto
-class TextRedirector:
-    def __init__(self, widget, tag="stdout"):
-        self.widget = widget
-        self.tag = tag
-
-    def write(self, message):
-        self.widget.configure(state="normal")
-        self.widget.insert(tk.END, message, (self.tag,))
-        self.widget.configure(state="disabled")
-        self.widget.see(tk.END)
-
-    def flush(self):
-        pass
+from models.energyManagementEnvironment import EnergyManagementEnvironment
+from models.qLearningAgent import QLearningAgent
+from views.textRedirector import TextRedirector
 
 
 class EnergyManagementApp:
@@ -425,11 +411,7 @@ class EnergyManagementApp:
                 with open(file_path, "rb") as file:
                     loaded_q_table = pickle.load(file)
                 # Verificar se a tabela Q carregada corresponde ao número de dispositivos
-                if (
-                    self.agent
-                    and len(loaded_q_table) == self.agent.q_table.shape[0]
-                    and loaded_q_table.shape[1] == self.agent.q_table.shape[1]
-                ):
+                if self.agent and loaded_q_table.shape == self.agent.q_table.shape:
                     self.q_table = loaded_q_table
                     self.status_label.config(
                         text=f"Tabela Q carregada de {os.path.basename(file_path)}",
