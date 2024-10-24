@@ -113,6 +113,14 @@ class QLearningAgent:
 
         return all_rewards, all_consumptions, self.q_table
 
+
+    def update_num_devices(self):
+        """
+        Atualiza o número de dispositivos e o número de ações no agente.
+        """
+        self.num_devices = len(self.env.devices)
+        self.num_actions = 2**self.num_devices
+
     def simulate_day(self):
         """
         Simula o consumo de energia durante um dia (24 horas).

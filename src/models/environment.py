@@ -3,7 +3,7 @@ class EnergyManagementEnvironment:
     Ambiente para gerenciamento de energia residencial utilizando Q-Learning.
     """
 
-    PRIORITY_DEVICES = ["geladeira", "frigobar"]
+    PRIORITY_DEVICES = ["geladeira", "frigobar", "Geladeira", "Frigobar"]
 
     def __init__(self, device_list, preco_energia=None, max_time=24):
         """
@@ -50,6 +50,22 @@ class EnergyManagementEnvironment:
                 unique_name = f"{device_name}_{i}"
                 devices[unique_name] = {"consumo": consumption,"estado": 0}
         return devices
+
+    def remove_device(self, device_name):
+        """
+        Remove um dispositivo da lista de dispositivos.
+
+        Args:
+            device_name (str): Nome do dispositivo a ser removido.
+        """
+        matching_devices = [d for d in self.devices if device_name in d]
+
+        if matching_devices:
+            # Remover todos os dispositivos que contenham o nome passado (para múltiplas instâncias)
+            for device in matching_devices:
+                del self.devices[device]
+        else:
+            raise ValueError(f"Dispositivo {device_name} não encontrado.")
 
     def reset(self):
         """

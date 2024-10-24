@@ -71,32 +71,40 @@ class EnergyManagementApp:
         self.show_plot_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         # Área de entrada de dispositivos
+        self.device_frame.config(text="Adicionar Novo Dispositivo", padding=(10, 5))
+
+        # Nome do dispositivo
         self.device_name_label = ttk.Label(self.device_frame, text="Nome do Dispositivo:")
-        self.device_name_label.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.device_name_label.grid(row=0, column=0, padx=10, pady=5, sticky="w")
         self.device_name_entry = ttk.Entry(self.device_frame)
-        self.device_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+        self.device_name_entry.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
 
+        # Potência (W)
         self.device_consumption_label = ttk.Label(self.device_frame, text="Potência (W):")
-        self.device_consumption_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.device_consumption_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.device_consumption_entry = ttk.Entry(self.device_frame)
-        self.device_consumption_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        self.device_consumption_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
 
+        # Quantidade
         self.device_quantity_label = ttk.Label(self.device_frame, text="Quantidade:")
-        self.device_quantity_label.grid(row=2, column=0, padx=5, pady=5, sticky="w")
+        self.device_quantity_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
         self.device_quantity_entry = ttk.Entry(self.device_frame)
-        self.device_quantity_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
+        self.device_quantity_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
+        # Botão Adicionar Dispositivo
         self.add_device_button = ttk.Button(self.device_frame, text="Adicionar Dispositivo", command=self.add_device)
-        self.add_device_button.grid(
-            row=3, column=0, columnspan=2, padx=5, pady=10, sticky="ew"
-        )
+        self.add_device_button.grid(row=3, column=0, columnspan=2, padx=10, pady=15, sticky="ew")
+
+        # Mensagem de feedback para validação de entrada de dados
+        self.feedback_label = ttk.Label(self.device_frame, text="", foreground="red")
+        self.feedback_label.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="w")
 
         # Lista de dispositivos adicionados
         self.device_list_label = ttk.Label(self.device_frame, text="Dispositivos Adicionados:")
-        self.device_list_label.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+        self.device_list_label.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="w")
 
         self.device_list_frame = ttk.Frame(self.device_frame)
-        self.device_list_frame.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.device_list_frame.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
         self.device_list_frame.grid_columnconfigure(0, weight=1)
 
         self.device_widgets = []
@@ -114,21 +122,35 @@ class EnergyManagementApp:
         Adiciona um novo dispositivo à lista de dispositivos.
         """
         try:
+            # Valida os dados de entrada
             device_name = self.device_name_entry.get().strip()
             device_consumption = float(self.device_consumption_entry.get())
             device_quantity = int(self.device_quantity_entry.get())
-            if not device_name or device_consumption <= 0 or device_quantity <= 0:
-                raise ValueError("Nome, consumo e quantidade devem ser válidos.")
+
+            # Verifica se os campos estão preenchidos corretamente
+            if not device_name:
+                self.feedback_label.config(text="Erro: Nome do dispositivo é obrigatório.", foreground="red")
+                return
+            if device_consumption <= 0:
+                self.feedback_label.config(text="Erro: Potência deve ser um número positivo.", foreground="red")
+                return
+            if device_quantity <= 0:
+                self.feedback_label.config(text="Erro: Quantidade deve ser um número positivo.", foreground="red")
+                return
+
+            # Adiciona o dispositivo à lista
             device = (device_name, device_consumption, device_quantity)
             self.devices.append(device)
             self.update_device_list()
-            self.status_label.config(text=f"Dispositivo '{device_name}' adicionado!", foreground="green")
-            # Limpar entradas
+
+            # Feedback de sucesso e limpa as entradas
+            self.feedback_label.config(text=f"Dispositivo '{device_name}' adicionado com sucesso!", foreground="green")
             self.device_name_entry.delete(0, tk.END)
             self.device_consumption_entry.delete(0, tk.END)
             self.device_quantity_entry.delete(0, tk.END)
-        except ValueError as ve:
-            self.status_label.config(text=f"Erro: {ve}", foreground="red")
+
+        except ValueError:
+            self.feedback_label.config(text="Erro: Potência e Quantidade devem ser números válidos.", foreground="red")
 
     def update_device_list(self):
         """
@@ -156,9 +178,12 @@ class EnergyManagementApp:
             index (int): Índice do dispositivo a ser removido.
         """
         try:
+            device_name = self.devices[index][0]
             del self.devices[index]
             self.update_device_list()
-            self.status_label.config( text="Dispositivo removido com sucesso!", foreground="green")
+            self.env.remove_device(device_name)
+            self.agent.update_num_devices()  # Atualize o número de dispositivos e ações
+            self.status_label.config(text="Dispositivo removido com sucesso!", foreground="green")
         except IndexError:
             self.status_label.config(text="Erro ao remover dispositivo.", foreground="red")
 
@@ -178,7 +203,10 @@ class EnergyManagementApp:
         if self.q_table is None:
             self.train_from_scratch()
         else:
-            self.start_training()
+            try:
+                self.start_training()
+            except ValueError as ve:
+                messagebox.showerror("Erro ao Continuar Treinamento", "Ocorreu um erro durante o treinamento. Por favor, reinicie o treinamento.",)
 
     def start_training(self):
         """
@@ -196,18 +224,28 @@ class EnergyManagementApp:
         # Aqui, você cria o agente
         self.agent = QLearningAgent(self.env, q_table=self.q_table)
 
-        # Pode ser que 'train' receba parâmetros adicionais no futuro
-        rewards, consumptions, self.q_table = self.agent.train()
+        # Atualiza o número de dispositivos e ações
+        self.agent.update_num_devices()
 
-        # Salva as recompensas e consumos para visualização posterior
-        self.rewards = rewards
-        self.consumptions = consumptions
+        try:
+            # Treinamento do agente
+            rewards, consumptions, self.q_table = self.agent.train()
 
-        # Mostra no console
-        self.console_output.config(state="normal")
-        self.console_output.insert(tk.END,f"Treinamento concluído. Recompensas: {rewards[-1]:.2f}, Consumo: {consumptions[-1]:.2f} kWh\n",)
-        self.console_output.config(state="disabled")
-        self.status_label.config(text="Treinamento concluído!", foreground="green")
+            # Salva as recompensas e consumos para visualização posterior
+            self.rewards = rewards
+            self.consumptions = consumptions
+
+            # Mostra no console
+            self.console_output.config(state="normal")
+            self.console_output.insert(tk.END,f"Treinamento concluído. Recompensas: {rewards[-1]:.2f}, Consumo: {consumptions[-1]:.2f} kWh\n",)
+            self.console_output.config(state="disabled")
+            self.status_label.config(text="Treinamento concluído!", foreground="green")
+
+        except ValueError as ve:
+            if "Número de ações deve corresponder ao número de dispositivos" in str(ve):
+                messagebox.showerror("Erro de Treinamento","O número de ações não corresponde ao número de dispositivos. Por favor, reinicie o treinamento.",)
+            else:
+                messagebox.showerror("Erro", str(ve))
 
     def simulate_day(self, custom_actions=None):
         """
@@ -226,27 +264,41 @@ class EnergyManagementApp:
 
         state = self.env.reset()
 
-        # Simular 24 horas
-        for step in range(24):
-            if custom_actions and step < len(custom_actions):
-                action = custom_actions[step]
+        try:
+            # Simular 24 horas
+            for step in range(24):
+                if custom_actions and step < len(custom_actions):
+                    action = custom_actions[step]
+                else:
+                    action = self.agent.choose_action(state)
+
+                decoded_action = self.agent.decode_action(action)
+                reward, consumption, done = self.env.step(decoded_action)
+                total_consumption += consumption
+
+                self.actions_taken.append((step, decoded_action, consumption))
+                state = self.env.tempo
+
+                # Armazena o estado dos dispositivos a cada hora
+                for device in self.env.devices:
+                    self.device_states[device].append(self.env.devices[device]["estado"])
+
+            self.console_output.config(state="normal")
+            self.console_output.insert(tk.END, f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh\n")
+            self.console_output.config(state="disabled")
+            self.status_label.config(text=f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh", foreground="green")
+
+        except ValueError as ve:
+            if "Número de ações deve corresponder ao número de dispositivos" in str(ve):
+                messagebox.showerror("Erro de Simulação", "O número de ações não corresponde ao número de dispositivos. Por favor, treine o modelo novamente.")
             else:
-                action = self.agent.choose_action(state)
+                messagebox.showerror("Erro", str(ve))
 
-            decoded_action = self.agent.decode_action(action)
-            reward, consumption, done = self.env.step(decoded_action)
-            total_consumption += consumption
-
-            self.actions_taken.append((step, decoded_action, consumption))
-            state = self.env.tempo
-
-            for device in self.env.devices:
-                self.device_states[device].append(self.env.devices[device]["estado"])
-
-        self.console_output.config(state="normal")
-        self.console_output.insert(tk.END, f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh\n")
-        self.console_output.config(state="disabled")
-        self.status_label.config(text=f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh", foreground="green")
+        except ValueError as ve:
+            if "Número de ações deve corresponder ao número de dispositivos" in str(ve):
+                messagebox.showerror("Erro de Simulação", "O número de ações não corresponde ao número de dispositivos. Por favor, treine o modelo novamente.")
+            else:
+                messagebox.showerror("Erro", str(ve))
 
     def show_plot(self):
         """
@@ -328,12 +380,19 @@ class EnergyManagementApp:
         Args:
             device_states (dict): Dicionário com os estados dos dispositivos por hora.
         """
+        if not device_states or all(len(states) == 0 for states in device_states.values()):
+            messagebox.showerror("Erro", "Nenhum dado de estado dos dispositivos encontrado. Por favor, realize a simulação.")
+            return
+
         hours = range(24)  # Representando as horas do dia
         num_devices = len(device_states)
         states_matrix = []
 
         # Construindo a matriz de estados para os dispositivos
         for device, states in device_states.items():
+            if len(states) != len(hours):  # Verifica se o número de estados corresponde ao número de horas
+                messagebox.showerror("Erro", f"Dispositivo {device} tem um número incorreto de estados. Esperado: {len(hours)}, Recebido: {len(states)}")
+                return
             states_matrix.append(states)
 
         # Transpondo a matriz para que as horas sejam nas linhas e os dispositivos nas colunas
@@ -342,14 +401,18 @@ class EnergyManagementApp:
         # Converte a lista de estados em um array para facilitar o empilhamento
         states_array = np.array(states_matrix)  # Usando a importação do NumPy
 
-        # Criação do gráfico de barras empilhadas
+        # Verifica se o número de dispositivos e o número de estados estão alinhados corretamente
+        if states_array.shape[0] != len(hours):
+            messagebox.showerror("Erro", f"Incompatibilidade entre o número de horas ({len(hours)}) e o número de estados ({states_array.shape[0]}).")
+            return
+
         fig, ax = plt.subplots(figsize=(10, 6))
 
-        # Para cada dispositivo, crie uma barra que empilha seu estado
         bottom_states = np.zeros(len(hours))  # Base inicial para empilhar
 
         device_names = list(device_states.keys())
 
+        # Para cada dispositivo, crie uma barra que empilha seu estado
         for i in range(num_devices):
             ax.bar(hours, states_array[:, i], bottom=bottom_states, label=device_names[i])
             bottom_states += states_array[:, i]  # Atualiza a base para o próximo dispositivo
