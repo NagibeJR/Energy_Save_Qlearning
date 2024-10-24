@@ -28,14 +28,13 @@ energy_management_qlearning_project/
 │
 ├── src/
 │   ├── models/
-│   │   ├── __init__.py
-│   │   ├── energyManagementEnvironment.py
-│   │   └── qLearningAgent.py
+│   │   ├── actions.py
+│   │   ├── agent.py
+│   │   └── environment.py
 │   │
 │   ├── views/
-│   │   ├── __init__.py
-│   │   ├── EnergyManagementApp.py
-│   │   └── textRedirector.py
+│   │   |
+│   │   └── energytApp.py
 │   │
 │   └── main.py
 │
@@ -57,8 +56,8 @@ energy_management_qlearning_project/
    - Clone o repositório ou faça o download dos arquivos.
 
    ```bash
-   git clone https://github.com/usuario/energy-management-qlearning.git
-   cd energy-management-qlearning
+   git clone https://github.com/NagibeJR/Qlearnig_Project
+   cd Qlearnig_Project
    ```
 
 2. **Crie e Ative um Ambiente Virtual (Opcional, mas Recomendado)**:

@@ -1,12 +1,11 @@
+from views.energyapp import EnergyManagementApp
 import tkinter as tk
-from views.EnergyManagementApp import EnergyManagementApp
 
 
 def main():
     root = tk.Tk()
     root.title("Gerenciador de Energia com Q-learning")
-    root.geometry("800x800")
-    app = EnergyManagementApp(root)
+    EnergyManagementApp(root)
     root.mainloop()
 
 
