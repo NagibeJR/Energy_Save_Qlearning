@@ -1,4 +1,4 @@
-from views.energyapp import EnergyManagementApp
+from views.energyApp import EnergyManagementApp
 import tkinter as tk
 
 

@@ -1,14 +1,17 @@
-import pandas as pd
 import numpy as np
 import tkinter as tk
 import matplotlib.pyplot as plt
-from tkinter import ttk, messagebox, filedialog
+from tkinter import ttk, messagebox
 from models.agent import QLearningAgent
 from models.environment import EnergyManagementEnvironment
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class EnergyManagementApp:
+    """
+    Interface gráfica para o gerenciador de energia utilizando Q-Learning.
+    """
+
     def __init__(self, master):
         self.master = master
         self.agent = None
@@ -17,9 +20,15 @@ class EnergyManagementApp:
         self.rewards = []
         self.consumptions = []
         self.simulation_results = []
+        self.env = None
+        self.actions_taken = []
+        self.device_states = {}
         self.create_widgets()
 
     def create_widgets(self):
+        """
+        Cria os widgets da interface gráfica.
+        """
         # Tornar a janela redimensionável
         self.master.grid_rowconfigure(0, weight=1)
         self.master.grid_rowconfigure(1, weight=1)
@@ -46,19 +55,19 @@ class EnergyManagementApp:
         self.train_button = ttk.Button(self.control_frame, text="Treinar do Zero", command=self.train_from_scratch)
         self.train_button.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
 
-        self.continue_button = ttk.Button(self.control_frame, text="Continuar Treinamento", command=self.continue_training)
+        self.continue_button = ttk.Button(self.control_frame,text="Continuar Treinamento", command=self.continue_training)
         self.continue_button.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
-        self.simulate_button = ttk.Button(self.control_frame, text="Simular Consumo em um Dia", command=self.simulate_day)
+        self.simulate_button = ttk.Button(self.control_frame,text="Simular Consumo em um Dia", command=self.simulate_day)
         self.simulate_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
-        self.export_results_button = ttk.Button(self.control_frame, text="Exportar Resultados", command=self.export_results)
-        self.export_results_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+        self.show_simulate_button = ttk.Button(self.control_frame,text="Mostrar simulação",command=self.show_simulation_and_device_states_graph)
+        self.show_simulate_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
-        self.show_q_table_button = ttk.Button(self.control_frame, text="Exibir Q-table", command=self.show_q_table)
+        self.show_q_table_button = ttk.Button(self.control_frame, text="Mostrar tabela Q", command=self.show_q_table)
         self.show_q_table_button.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
 
-        self.show_plot_button = ttk.Button(self.control_frame, text="Exibir Gráfico", command=self.show_plot)
+        self.show_plot_button = ttk.Button(self.control_frame, text="Mostrar do treinamento", command=self.show_plot)
         self.show_plot_button.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         # Área de entrada de dispositivos
@@ -67,7 +76,7 @@ class EnergyManagementApp:
         self.device_name_entry = ttk.Entry(self.device_frame)
         self.device_name_entry.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
 
-        self.device_consumption_label = ttk.Label(self.device_frame, text="Potencia (W):")
+        self.device_consumption_label = ttk.Label(self.device_frame, text="Potência (W):")
         self.device_consumption_label.grid(row=1, column=0, padx=5, pady=5, sticky="w")
         self.device_consumption_entry = ttk.Entry(self.device_frame)
         self.device_consumption_entry.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
@@ -78,7 +87,9 @@ class EnergyManagementApp:
         self.device_quantity_entry.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         self.add_device_button = ttk.Button(self.device_frame, text="Adicionar Dispositivo", command=self.add_device)
-        self.add_device_button.grid(row=3, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
+        self.add_device_button.grid(
+            row=3, column=0, columnspan=2, padx=5, pady=10, sticky="ew"
+        )
 
         # Lista de dispositivos adicionados
         self.device_list_label = ttk.Label(self.device_frame, text="Dispositivos Adicionados:")
@@ -99,6 +110,9 @@ class EnergyManagementApp:
         self.status_label.grid(row=3, column=0, padx=10, pady=10, sticky="w")
 
     def add_device(self):
+        """
+        Adiciona um novo dispositivo à lista de dispositivos.
+        """
         try:
             device_name = self.device_name_entry.get().strip()
             device_consumption = float(self.device_consumption_entry.get())
@@ -109,45 +123,67 @@ class EnergyManagementApp:
             self.devices.append(device)
             self.update_device_list()
             self.status_label.config(text=f"Dispositivo '{device_name}' adicionado!", foreground="green")
+            # Limpar entradas
+            self.device_name_entry.delete(0, tk.END)
+            self.device_consumption_entry.delete(0, tk.END)
+            self.device_quantity_entry.delete(0, tk.END)
         except ValueError as ve:
             self.status_label.config(text=f"Erro: {ve}", foreground="red")
 
     def update_device_list(self):
+        """
+        Atualiza a lista de dispositivos na interface gráfica.
+        """
         for widget in self.device_widgets:
             widget.destroy()
         self.device_widgets = []
 
         for i, (device_name, consumption, quantity) in enumerate(self.devices):
-            device_label = ttk.Label(self.device_list_frame,text=f"{device_name} | Potencia: {consumption} W | Quantidade: {quantity}")
+            device_label = ttk.Label(self.device_list_frame, text=f"{device_name} | Potência: {consumption} W | Quantidade: {quantity}")
             device_label.grid(row=i, column=0, padx=5, pady=2, sticky="w")
 
-            remove_button = ttk.Button(self.device_list_frame,text="Remover",command=lambda i=i: self.remove_device(i))
+            remove_button = ttk.Button(self.device_list_frame,text="Remover", command=lambda i=i: self.remove_device(i))
             remove_button.grid(row=i, column=1, padx=5, pady=2, sticky="e")
 
             self.device_widgets.append(device_label)
             self.device_widgets.append(remove_button)
 
     def remove_device(self, index):
+        """
+        Remove um dispositivo da lista com base no índice.
+
+        Args:
+            index (int): Índice do dispositivo a ser removido.
+        """
         try:
             del self.devices[index]
             self.update_device_list()
-            self.status_label.config(text="Dispositivo removido com sucesso!", foreground="green")
+            self.status_label.config( text="Dispositivo removido com sucesso!", foreground="green")
         except IndexError:
             self.status_label.config(text="Erro ao remover dispositivo.", foreground="red")
 
     def train_from_scratch(self):
+        """
+        Inicia o treinamento do agente a partir do zero, reiniciando a Q-table.
+        """
         confirm = messagebox.askyesno("Confirmar", "Isso irá reiniciar a tabela Q. Deseja continuar?")
         if confirm:
             self.q_table = None
             self.start_training()
 
     def continue_training(self):
+        """
+        Continua o treinamento do agente a partir da Q-table existente.
+        """
         if self.q_table is None:
             self.train_from_scratch()
         else:
             self.start_training()
 
     def start_training(self):
+        """
+        Configura e inicia o processo de treinamento do agente.
+        """
         if not self.devices:
             self.status_label.config(text="Adicione pelo menos um dispositivo.", foreground="red")
             return
@@ -155,11 +191,12 @@ class EnergyManagementApp:
         self.clear_console()  # Limpa o console
 
         # Inicialize o ambiente
-        env = EnergyManagementEnvironment(self.devices)
+        self.env = EnergyManagementEnvironment(self.devices)
 
         # Aqui, você cria o agente
-        self.agent = QLearningAgent(env, q_table=self.q_table)
+        self.agent = QLearningAgent(self.env, q_table=self.q_table)
 
+        # Pode ser que 'train' receba parâmetros adicionais no futuro
         rewards, consumptions, self.q_table = self.agent.train()
 
         # Salva as recompensas e consumos para visualização posterior
@@ -168,32 +205,30 @@ class EnergyManagementApp:
 
         # Mostra no console
         self.console_output.config(state="normal")
-        self.console_output.insert(tk.END, f"Treinamento concluído. Recompensas: {rewards[-1]:.2f}, Consumo: {consumptions[-1]:.2f} kWh\n")
+        self.console_output.insert(tk.END,f"Treinamento concluído. Recompensas: {rewards[-1]:.2f}, Consumo: {consumptions[-1]:.2f} kWh\n",)
         self.console_output.config(state="disabled")
         self.status_label.config(text="Treinamento concluído!", foreground="green")
 
     def simulate_day(self, custom_actions=None):
+        """
+        Simula o consumo de energia durante um dia.
+        """
         if self.q_table is None:
-            self.status_label.config(
-                text="Por favor, treine o modelo antes de simular.", foreground="red"
-            )
+            self.status_label.config(text="Por favor, treine o modelo antes de simular.", foreground="red")
             return
 
-        if not hasattr(self, "env") or self.env is None:
+        if not self.env:
             self.env = EnergyManagementEnvironment(self.devices)
 
         total_consumption = 0
-        actions_taken = []
-        device_states = {
-            device: [] for device in self.env.devices
-        }  # Para armazenar estados dos dispositivos
+        self.actions_taken = []  # Redefine a variável para armazenar as ações
+        self.device_states = {device: [] for device in self.env.devices}  # Redefine os estados
 
-        # Estado inicial
         state = self.env.reset()
 
         # Simular 24 horas
         for step in range(24):
-            if custom_actions:
+            if custom_actions and step < len(custom_actions):
                 action = custom_actions[step]
             else:
                 action = self.agent.choose_action(state)
@@ -202,31 +237,23 @@ class EnergyManagementApp:
             reward, consumption, done = self.env.step(decoded_action)
             total_consumption += consumption
 
-            # Adiciona a ação e o consumo total
-            actions_taken.append((step, decoded_action, consumption))
+            self.actions_taken.append((step, decoded_action, consumption))
             state = self.env.tempo
 
-            # Atualiza os estados dos dispositivos
-            for i, device in enumerate(self.env.devices):
-                device_states[device].append(self.env.devices[device]["estado"])
+            for device in self.env.devices:
+                self.device_states[device].append(self.env.devices[device]["estado"])
 
         self.console_output.config(state="normal")
-        self.console_output.insert(
-            tk.END, f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh\n"
-        )
+        self.console_output.insert(tk.END, f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh\n")
         self.console_output.config(state="disabled")
-        self.status_label.config(
-            text=f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh",
-            foreground="green",
-        )
-
-        # Chama a função para mostrar os gráficos
-        self.show_simulation_graph(actions_taken)
-        self.show_device_states_graph(device_states)
+        self.status_label.config(text=f"Simulação concluída! Consumo total: {total_consumption:.2f} kWh", foreground="green")
 
     def show_plot(self):
+        """
+        Exibe os gráficos de recompensas e consumo durante o treinamento.
+        """
         if not self.rewards or not self.consumptions:
-            self.status_label.config(text="Por favor, treine o modelo antes de exibir o gráfico.",foreground="red")
+            self.status_label.config(text="Por favor, treine o modelo antes de exibir o gráfico.", foreground="red")
             return
 
         plot_window = tk.Toplevel(self.master)
@@ -243,9 +270,7 @@ class EnergyManagementApp:
         ax[0].grid(True)
         ax[0].legend()
 
-        ax[1].plot(
-            episodes, self.consumptions, label="Consumo de Energia", color="orange"
-        )
+        ax[1].plot(episodes, self.consumptions, label="Consumo de Energia", color="orange")
         ax[1].set_xlabel("Episódios")
         ax[1].set_ylabel("Consumo Total (kWh)")
         ax[1].set_title("Consumo de Energia Durante o Treinamento")
@@ -256,27 +281,53 @@ class EnergyManagementApp:
         canvas.draw()
         canvas.get_tk_widget().pack()
 
+    def show_simulation_and_device_states_graph(self):
+        """
+        Mostra ambos os gráficos: consumo total e estados dos dispositivos.
+        """
+        if not self.actions_taken or not self.device_states:
+            self.status_label.config(text="Por favor, realize a simulação antes de visualizar os gráficos.", foreground="red",)
+            return
+
+        self.show_simulation_graph(self.actions_taken)
+        self.show_device_states_graph(self.device_states)
+
     def show_simulation_graph(self, actions_taken):
+        """
+        Exibe o gráfico de consumo total ao longo do dia.
+
+        Args:
+            actions_taken (list): Lista de ações tomadas durante a simulação.
+        """
         steps = [step for step, _, _ in actions_taken]
         consumptions = [consumption for _, _, consumption in actions_taken]
         total_consumption = [sum(consumptions[: i + 1]) for i in range(len(consumptions))]
 
-        # Criação do gráfico
-        plt.figure(figsize=(10, 5))
-        plt.plot(steps, total_consumption, marker="o", label="Consumo Total (kWh)")
-        plt.title("Consumo de Energia ao Longo do Dia")
-        plt.xlabel("Hora do Dia")
-        plt.ylabel("Consumo Total (kWh)")
-        plt.xticks(steps)  # Marcas para cada hora
-        plt.grid(True)
-        plt.legend()
-        plt.tight_layout()
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.plot(steps, total_consumption, marker="o", label="Consumo Total (kWh)")
+        ax.set_title("Consumo de Energia ao Longo do Dia")
+        ax.set_xlabel("Hora do Dia")
+        ax.set_ylabel("Consumo Total (kWh)")
+        ax.set_xticks(steps)
+        ax.grid(True)
+        ax.legend()
+        fig.tight_layout()
 
-        # Exibir gráfico
-        plt.show()
+        # Criação de uma nova janela para o gráfico
+        graph_window = tk.Toplevel(self.master)
+        graph_window.title("Gráfico de Simulação")
 
+        canvas = FigureCanvasTkAgg(fig, master=graph_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
     def show_device_states_graph(self, device_states):
+        """
+        Exibe o gráfico de estados dos dispositivos ao longo do dia.
+
+        Args:
+            device_states (dict): Dicionário com os estados dos dispositivos por hora.
+        """
         hours = range(24)  # Representando as horas do dia
         num_devices = len(device_states)
         states_matrix = []
@@ -292,61 +343,38 @@ class EnergyManagementApp:
         states_array = np.array(states_matrix)  # Usando a importação do NumPy
 
         # Criação do gráfico de barras empilhadas
-        plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
 
         # Para cada dispositivo, crie uma barra que empilha seu estado
         bottom_states = np.zeros(len(hours))  # Base inicial para empilhar
 
+        device_names = list(device_states.keys())
+
         for i in range(num_devices):
-            plt.bar(
-                hours,
-                states_array[:, i],
-                bottom=bottom_states,
-                label=list(device_states.keys())[i],
-            )
-            bottom_states += states_array[
-                :, i
-            ]  # Atualiza a base para o próximo dispositivo
+            ax.bar(hours, states_array[:, i], bottom=bottom_states, label=device_names[i])
+            bottom_states += states_array[:, i]  # Atualiza a base para o próximo dispositivo
 
-        plt.title("Estados dos Dispositivos ao Longo do Dia")
-        plt.xlabel("Hora do Dia")
-        plt.ylabel("Estado do Dispositivo (0=Desligado, 1=Ligado)")
-        plt.xticks(
-            hours, [f"{i}:00" for i in hours], rotation=45
-        )  # Adiciona rótulos de hora
-        plt.grid(axis="y", linestyle="--", alpha=0.7)
-        plt.legend(title="Dispositivos")
-        plt.tight_layout()
+        ax.set_title("Estados dos Dispositivos ao Longo do Dia")
+        ax.set_xlabel("Hora do Dia")
+        ax.set_ylabel("Estado do Dispositivo (0=Desligado, 1=Ligado)")
+        ax.set_xticks(hours)
+        ax.set_xticklabels([f"{i}:00" for i in hours], rotation=45)
+        ax.grid(axis="y", linestyle="--", alpha=0.7)
+        ax.legend(title="Dispositivos")
+        fig.tight_layout()
 
-        # Exibir gráfico
-        plt.show()
+        # Criação de uma nova janela para o gráfico
+        graph_window = tk.Toplevel(self.master)
+        graph_window.title("Estados dos Dispositivos")
 
-    def export_results(self):
-        if not self.simulation_results:
-            self.status_label.config(
-                text="Nenhum resultado disponível para exportar.", foreground="red"
-            )
-            return
-
-        # Abre uma janela para escolher o local do arquivo
-        file_path = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-            title="Salvar resultados como",
-        )
-
-        if file_path:
-            # Cria um DataFrame com os resultados
-            df = pd.DataFrame(
-                self.simulation_results,
-                columns=["Passo", "Ação", "Consumo", "Consumo Total (kWh)"],
-            )
-            df.to_csv(file_path, index=False)
-            self.status_label.config(
-                text="Resultados exportados com sucesso!", foreground="green"
-            )
+        canvas = FigureCanvasTkAgg(fig, master=graph_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
 
     def show_q_table(self):
+        """
+        Exibe a Q-table em uma nova janela.
+        """
         if self.q_table is None:
             self.status_label.config(text="Por favor, treine o modelo antes de visualizar a Q-table.",foreground="red")
             return
@@ -359,13 +387,17 @@ class EnergyManagementApp:
         q_table_text = tk.Text(q_table_window, wrap="none", height=20, width=60)
         q_table_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        # Insere a Q-table na área de texto
-        q_table_text.insert(tk.END, f"Q-table:\n{self.q_table}")
+        # Formata a Q-table para melhor visualização
+        q_table_str = "\n".join(["\t".join([f"{q:.2f}" for q in row]) for row in self.q_table])
+        q_table_text.insert(tk.END, f"Q-table:\n{q_table_str}")
 
         # Desabilita a edição no campo de texto
         q_table_text.config(state="disabled")
 
     def clear_console(self):
+        """
+        Limpa o console de saída.
+        """
         self.console_output.config(state="normal")
         self.console_output.delete("1.0", tk.END)
         self.console_output.config(state="disabled")
