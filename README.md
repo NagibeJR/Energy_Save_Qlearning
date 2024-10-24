@@ -13,13 +13,11 @@ Este projeto implementa um gerenciador de energia utilizando a técnica de apren
 - **Exportar Resultados**: O resultado da simulação diária pode ser exportado para um arquivo CSV para posterior análise.
 
 ## Tecnologias Utilizadas
-
-- **Python 3.8+**
-- **Tkinter**: Para a interface gráfica.
-- **Numpy**: Para cálculos numéricos e manipulação da tabela Q.
-- **Matplotlib**: Para visualização dos gráficos de desempenho do agente.
-- **Pickle**: Para salvar e carregar a tabela Q.
-- **CSV**: Para exportar os resultados da simulação.
+- **Tkinter:** Biblioteca padrão para a criação de interfaces gráficas (GUI) em Python.
+- **Pandas:** Utilizada para manipulação e análise de dados, especialmente para exportar resultados de simulações para CSV.
+- **Matplotlib:** Usada para a criação de gráficos e visualização de dados.
+- **Seaborn:** Biblioteca baseada no Matplotlib para criar visualizações estatísticas de forma mais atraente.
+- **NumPy:** Biblioteca para suporte a arrays e operações matemáticas de alto desempenho, usada para operações matriciais e cálculos numéricos.
 
 ## Estrutura do Projeto
 
