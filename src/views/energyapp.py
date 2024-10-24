@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import tkinter as tk
 import matplotlib.pyplot as plt
 from tkinter import ttk, messagebox, filedialog
@@ -183,6 +184,9 @@ class EnergyManagementApp:
 
         total_consumption = 0
         actions_taken = []
+        device_states = {
+            device: [] for device in self.env.devices
+        }  # Para armazenar estados dos dispositivos
 
         # Estado inicial
         state = self.env.reset()
@@ -197,10 +201,14 @@ class EnergyManagementApp:
             decoded_action = self.agent.decode_action(action)
             reward, consumption, done = self.env.step(decoded_action)
             total_consumption += consumption
-            actions_taken.append(
-                (step, decoded_action, consumption, total_consumption)
-            )  # Adicione o total aqui
+
+            # Adiciona a ação e o consumo total
+            actions_taken.append((step, decoded_action, consumption))
             state = self.env.tempo
+
+            # Atualiza os estados dos dispositivos
+            for i, device in enumerate(self.env.devices):
+                device_states[device].append(self.env.devices[device]["estado"])
 
         self.console_output.config(state="normal")
         self.console_output.insert(
@@ -212,8 +220,9 @@ class EnergyManagementApp:
             foreground="green",
         )
 
-        # Armazenar os resultados da simulação para exportação
-        self.simulation_results = actions_taken  # Adiciona os resultados aqui
+        # Chama a função para mostrar os gráficos
+        self.show_simulation_graph(actions_taken)
+        self.show_device_states_graph(device_states)
 
     def show_plot(self):
         if not self.rewards or not self.consumptions:
@@ -247,6 +256,70 @@ class EnergyManagementApp:
         canvas.draw()
         canvas.get_tk_widget().pack()
 
+    def show_simulation_graph(self, actions_taken):
+        steps = [step for step, _, _ in actions_taken]
+        consumptions = [consumption for _, _, consumption in actions_taken]
+        total_consumption = [sum(consumptions[: i + 1]) for i in range(len(consumptions))]
+
+        # Criação do gráfico
+        plt.figure(figsize=(10, 5))
+        plt.plot(steps, total_consumption, marker="o", label="Consumo Total (kWh)")
+        plt.title("Consumo de Energia ao Longo do Dia")
+        plt.xlabel("Hora do Dia")
+        plt.ylabel("Consumo Total (kWh)")
+        plt.xticks(steps)  # Marcas para cada hora
+        plt.grid(True)
+        plt.legend()
+        plt.tight_layout()
+
+        # Exibir gráfico
+        plt.show()
+
+
+    def show_device_states_graph(self, device_states):
+        hours = range(24)  # Representando as horas do dia
+        num_devices = len(device_states)
+        states_matrix = []
+
+        # Construindo a matriz de estados para os dispositivos
+        for device, states in device_states.items():
+            states_matrix.append(states)
+
+        # Transpondo a matriz para que as horas sejam nas linhas e os dispositivos nas colunas
+        states_matrix = list(map(list, zip(*states_matrix)))
+
+        # Converte a lista de estados em um array para facilitar o empilhamento
+        states_array = np.array(states_matrix)  # Usando a importação do NumPy
+
+        # Criação do gráfico de barras empilhadas
+        plt.figure(figsize=(10, 6))
+
+        # Para cada dispositivo, crie uma barra que empilha seu estado
+        bottom_states = np.zeros(len(hours))  # Base inicial para empilhar
+
+        for i in range(num_devices):
+            plt.bar(
+                hours,
+                states_array[:, i],
+                bottom=bottom_states,
+                label=list(device_states.keys())[i],
+            )
+            bottom_states += states_array[
+                :, i
+            ]  # Atualiza a base para o próximo dispositivo
+
+        plt.title("Estados dos Dispositivos ao Longo do Dia")
+        plt.xlabel("Hora do Dia")
+        plt.ylabel("Estado do Dispositivo (0=Desligado, 1=Ligado)")
+        plt.xticks(
+            hours, [f"{i}:00" for i in hours], rotation=45
+        )  # Adiciona rótulos de hora
+        plt.grid(axis="y", linestyle="--", alpha=0.7)
+        plt.legend(title="Dispositivos")
+        plt.tight_layout()
+
+        # Exibir gráfico
+        plt.show()
 
     def export_results(self):
         if not self.simulation_results:
