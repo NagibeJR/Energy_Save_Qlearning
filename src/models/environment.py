@@ -3,9 +3,13 @@ class EnergyManagementEnvironment:
     Ambiente para gerenciamento de energia residencial utilizando Q-Learning.
     """
 
-    PRIORITY_DEVICES = ["geladeira", "frigobar", "Geladeira", "Frigobar"]
+    PRIORITY_DEVICES = [
+        "geladeira", "geladeira_1", "geladeira_2", "geladeira_3", "geladeira_4", "geladeira_5", "geladeira_6", "geladeira_7", "geladeira_8", 
+        "Geladeira","Geladeira_1", "Geladeira_2", "Geladeira_3", "Geladeira_4", "Geladeira_5", "Geladeira_6", "Geladeira_7", "Geladeira_8",
+        "frigobar", "frigobar_1", "frigobar_2", "frigobar_3", "frigobar_4", "frigobar_5", "frigobar_6", "frigobar_7", "frigobar_8",
+        "Frigobar", "Frigobar_1", "Frigobar_2", "Frigobar_3", "Frigobar_4", "Frigobar_5", "Frigobar_6", "Frigobar_7", "Frigobar_8"]
 
-    def __init__(self, device_list, preco_energia=None, max_time=24):
+    def __init__(self, device_list, preco_energia=None, max_time=24,  hora_dormir=22, hora_acordar=6):
         """
         Inicializa o ambiente com uma lista de dispositivos e preços de energia.
 
@@ -17,12 +21,9 @@ class EnergyManagementEnvironment:
         self.devices = self.generate_devices(device_list)
         self.tempo = 0
         self.max_time = max_time
-        # Preço da energia por hora
-        self.preco_energia = (
-            preco_energia
-            if preco_energia
-            else [0.5 if 12 <= i < 18 else 0.2 for i in range(self.max_time)]
-        )
+        self.hora_dormir = hora_dormir
+        self.hora_acordar = hora_acordar 
+        self.preco_energia = (preco_energia if preco_energia else [0.5 if 22 <= i < 5 else 0.2 for i in range(self.max_time)])
 
     def generate_devices(self, device_list):
         """
@@ -39,16 +40,10 @@ class EnergyManagementEnvironment:
         """
         devices = {}
         for device in device_list:
-            if not isinstance(device, (list, tuple)) or len(device) != 3:
-                raise ValueError("Cada dispositivo deve ser uma tupla/lista com 3 elementos: (nome, consumo, quantidade).")
             device_name, consumption, quantity = device
-            if (not isinstance(device_name, str) or not isinstance(consumption, (int, float)) or not isinstance(quantity, int)): 
-                raise ValueError("Nome deve ser uma string, consumo um número e quantidade um inteiro.")
-            if consumption <= 0 or quantity <= 0:
-                raise ValueError("Consumo e quantidade devem ser números positivos.")
             for i in range(1, quantity + 1):
                 unique_name = f"{device_name}_{i}"
-                devices[unique_name] = {"consumo": consumption,"estado": 0}
+                devices[unique_name] = {"consumo": consumption, "estado": 0}
         return devices
 
     def remove_device(self, device_name):
@@ -77,9 +72,6 @@ class EnergyManagementEnvironment:
         self.tempo = 0
         for device in self.devices:
             self.devices[device]["estado"] = 0
-        for device in self.devices:
-            if any(prio in device.lower() for prio in self.PRIORITY_DEVICES):
-                self.devices[device]["estado"] = 1
         return self.tempo
 
     def step(self, actions):
@@ -92,37 +84,37 @@ class EnergyManagementEnvironment:
         Returns:
             tuple: Recompensa obtida, consumo total, e flag indicando se o episódio terminou.
         """
-        if len(actions) != len(self.devices):
-            raise ValueError("Número de ações deve corresponder ao número de dispositivos.")
+        consumo_total = 0
+        reward = 0
 
         for i, device in enumerate(self.devices):
-            self.devices[device]["estado"] = actions[i]
+            if device in self.PRIORITY_DEVICES:
+                if self.tempo % 2 == 0:
+                    self.devices[device]["estado"] = 1
+                else:
+                    self.devices[device]["estado"] = 0
+            else:
+                self.devices[device]["estado"] = actions[i]
 
-        # Calcular o consumo total
-        consumo_total = sum((self.devices[d]["consumo"] / 1000) * self.devices[d]["estado"] for d in self.devices)
+                if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
+                    self.devices[device]["estado"] = 0
 
-        # Recompensa baseada na prioridade dos dispositivos
+        consumo_total += (self.devices[device]["consumo"] / 1000) * self.devices[device]["estado"]
+
         reward = 0
         for device in self.devices:
-            if self.devices[device]["estado"] == 1:  # Se o dispositivo está ligado
+            if self.devices[device]["estado"] == 1:
                 if any(prio in device.lower() for prio in self.PRIORITY_DEVICES):
-                    reward += 10  # Bônus maior para dispositivos prioritários
+                    reward += 10 
                 else:
-                    reward += 5  # Bônus padrão para outros dispositivos
+                    reward += 5
 
-        # Penalização para consumo excessivo
-        if consumo_total > 5:  # Penalizar mais fortemente para consumo maior que 5kWh
-            reward -= (
-                consumo_total - 5
-            ) * 20  # Penalização mais severa para consumo alto
+        if consumo_total > 5:
+            reward -= (consumo_total - 5) * 20
 
-        # Penalizar uso em horário de energia cara (12h às 18h)
-        if 12 <= self.tempo < 18:
-            reward -= (
-                consumo_total * 10
-            )  # Penalização extra para consumo em horário caro
+        if self.tempo >= 22 or self.tempo < 5:
+            reward -= consumo_total * 15
 
-        # Atualiza o tempo
         self.tempo = (self.tempo + 1) % self.max_time
 
         return reward, consumo_total, self.tempo == 0

@@ -24,11 +24,9 @@ class QLearningAgent:
         self.epsilon = epsilon
         self.num_devices = len(self.env.devices)
         self.num_actions = 2**self.num_devices
-        self.q_table = (
-            q_table
-            if q_table is not None
-            else np.zeros((env.max_time, self.num_actions))
-        )
+        if self.num_actions > 1000:
+            raise ValueError(f"Número de ações ({self.num_actions}) é muito grande. Reduza o número de dispositivos.")
+        self.q_table = (q_table if q_table is not None else np.zeros((env.max_time, self.num_actions)))
 
     def choose_action(self, state):
         """
@@ -70,7 +68,7 @@ class QLearningAgent:
         best_next_action = np.argmax(self.q_table[next_state])
         self.q_table[state, action] += self.alpha * (reward + self.gamma * self.q_table[next_state, best_next_action] - self.q_table[state, action])
 
-    def train(self, num_episodes=1000, speed_factor=1.0):
+    def train(self, num_episodes=5000, speed_factor=1.0):
         """
         Treina o agente usando o algoritmo Q-Learning.
 
@@ -112,7 +110,6 @@ class QLearningAgent:
                 print(f"Episódio {episode} concluído. Recompensa: {total_reward:.2f}, Consumo: {total_consumption:.2f} kWh")
 
         return all_rewards, all_consumptions, self.q_table
-
 
     def update_num_devices(self):
         """

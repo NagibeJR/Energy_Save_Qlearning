@@ -23,7 +23,9 @@ class EnergyManagementApp:
         self.env = None
         self.actions_taken = []
         self.device_states = {}
+        self.device_quantities = ({})
         self.create_widgets()
+    
 
     def create_widgets(self):
         """
@@ -61,7 +63,7 @@ class EnergyManagementApp:
         self.simulate_button = ttk.Button(self.control_frame,text="Simular Consumo em um Dia", command=self.simulate_day)
         self.simulate_button.grid(row=1, column=0, padx=5, pady=5, sticky="ew")
 
-        self.show_simulate_button = ttk.Button(self.control_frame,text="Mostrar simulação",command=self.show_simulation_and_device_states_graph)
+        self.show_simulate_button = ttk.Button(self.control_frame,text="Mostrar simulação", command=self.show_simulation_and_device_states_graph)
         self.show_simulate_button.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
 
         self.show_q_table_button = ttk.Button(self.control_frame, text="Mostrar tabela Q", command=self.show_q_table)
@@ -84,12 +86,6 @@ class EnergyManagementApp:
         self.device_consumption_label.grid(row=1, column=0, padx=10, pady=5, sticky="w")
         self.device_consumption_entry = ttk.Entry(self.device_frame)
         self.device_consumption_entry.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
-
-        # Quantidade
-        self.device_quantity_label = ttk.Label(self.device_frame, text="Quantidade:")
-        self.device_quantity_label.grid(row=2, column=0, padx=10, pady=5, sticky="w")
-        self.device_quantity_entry = ttk.Entry(self.device_frame)
-        self.device_quantity_entry.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
         # Botão Adicionar Dispositivo
         self.add_device_button = ttk.Button(self.device_frame, text="Adicionar Dispositivo", command=self.add_device)
@@ -122,35 +118,28 @@ class EnergyManagementApp:
         Adiciona um novo dispositivo à lista de dispositivos.
         """
         try:
-            # Valida os dados de entrada
             device_name = self.device_name_entry.get().strip()
             device_consumption = float(self.device_consumption_entry.get())
-            device_quantity = int(self.device_quantity_entry.get())
 
-            # Verifica se os campos estão preenchidos corretamente
             if not device_name:
                 self.feedback_label.config(text="Erro: Nome do dispositivo é obrigatório.", foreground="red")
                 return
             if device_consumption <= 0:
                 self.feedback_label.config(text="Erro: Potência deve ser um número positivo.", foreground="red")
                 return
-            if device_quantity <= 0:
-                self.feedback_label.config(text="Erro: Quantidade deve ser um número positivo.", foreground="red")
-                return
 
-            # Adiciona o dispositivo à lista
-            device = (device_name, device_consumption, device_quantity)
+            device = (device_name, device_consumption, 1)
             self.devices.append(device)
+            self.device_quantities[device_name] = 1
+
             self.update_device_list()
 
-            # Feedback de sucesso e limpa as entradas
-            self.feedback_label.config(text=f"Dispositivo '{device_name}' adicionado com sucesso!", foreground="green")
+            self.feedback_label.config(text=f"Dispositivo '{device_name}' adicionado com sucesso!",foreground="green")
             self.device_name_entry.delete(0, tk.END)
             self.device_consumption_entry.delete(0, tk.END)
-            self.device_quantity_entry.delete(0, tk.END)
 
         except ValueError:
-            self.feedback_label.config(text="Erro: Potência e Quantidade devem ser números válidos.", foreground="red")
+            self.feedback_label.config(text="Erro: Potência deve ser um número válido.", foreground="red")
 
     def update_device_list(self):
         """
@@ -160,29 +149,63 @@ class EnergyManagementApp:
             widget.destroy()
         self.device_widgets = []
 
-        for i, (device_name, consumption, quantity) in enumerate(self.devices):
-            device_label = ttk.Label(self.device_list_frame, text=f"{device_name} | Potência: {consumption} W | Quantidade: {quantity}")
-            device_label.grid(row=i, column=0, padx=5, pady=2, sticky="w")
+        for i, (device_name, consumption, _) in enumerate(self.devices):
+            quantity = self.device_quantities[device_name]
 
-            remove_button = ttk.Button(self.device_list_frame,text="Remover", command=lambda i=i: self.remove_device(i))
-            remove_button.grid(row=i, column=1, padx=5, pady=2, sticky="e")
+            self.devices[i] = (device_name, consumption, quantity)
+
+            device_label = ttk.Label(self.device_list_frame,text=f"{device_name} | Potência: {consumption} W | Quantidade: {quantity}")
+            device_label.grid(row=i, column=0, padx=5, pady=2, sticky="w")
+            increment_button = ttk.Button(self.device_list_frame, text="+", command=lambda name=device_name: self.increment_quantity(name))
+            increment_button.grid(row=i, column=1, padx=5, pady=2, sticky="e")
+
+            decrement_button = ttk.Button(self.device_list_frame, text="-", command=lambda name=device_name: self.decrement_quantity(name))
+            decrement_button.grid(row=i, column=2, padx=5, pady=2, sticky="e")
 
             self.device_widgets.append(device_label)
-            self.device_widgets.append(remove_button)
+            self.device_widgets.append(increment_button)
+            self.device_widgets.append(decrement_button)
+
+    def increment_quantity(self, device_name):
+        """
+        Incrementa a quantidade de dispositivos, até o máximo de 8.
+        """
+        if self.device_quantities[device_name] < 8:
+            self.device_quantities[device_name] += 1
+            self.update_device_list()
+
+
+    def decrement_quantity(self, device_name):
+        """
+        Decrementa a quantidade de dispositivos, até o mínimo de 0.
+        Remove o dispositivo se a quantidade chegar a 0.
+        """
+        if self.device_quantities[device_name] > 1:
+            self.device_quantities[device_name] -= 1
+        else:
+            self.remove_device_by_name(device_name)
+        self.update_device_list()
+
+
+    def remove_device_by_name(self, device_name):
+        """
+        Remove o dispositivo da lista com base no nome.
+        """
+        self.devices = [device for device in self.devices if device[0] != device_name]
+        del self.device_quantities[device_name]
+        self.update_device_list()
 
     def remove_device(self, index):
         """
         Remove um dispositivo da lista com base no índice.
-
-        Args:
-            index (int): Índice do dispositivo a ser removido.
         """
         try:
             device_name = self.devices[index][0]
             del self.devices[index]
+            del self.device_quantities[device_name]
             self.update_device_list()
             self.env.remove_device(device_name)
-            self.agent.update_num_devices()  # Atualize o número de dispositivos e ações
+            self.agent.update_num_devices()
             self.status_label.config(text="Dispositivo removido com sucesso!", foreground="green")
         except IndexError:
             self.status_label.config(text="Erro ao remover dispositivo.", foreground="red")
@@ -216,26 +239,16 @@ class EnergyManagementApp:
             self.status_label.config(text="Adicione pelo menos um dispositivo.", foreground="red")
             return
 
-        self.clear_console()  # Limpa o console
-
-        # Inicialize o ambiente
+        self.clear_console()
         self.env = EnergyManagementEnvironment(self.devices)
-
-        # Aqui, você cria o agente
         self.agent = QLearningAgent(self.env, q_table=self.q_table)
-
-        # Atualiza o número de dispositivos e ações
         self.agent.update_num_devices()
 
         try:
-            # Treinamento do agente
             rewards, consumptions, self.q_table = self.agent.train()
-
-            # Salva as recompensas e consumos para visualização posterior
             self.rewards = rewards
             self.consumptions = consumptions
 
-            # Mostra no console
             self.console_output.config(state="normal")
             self.console_output.insert(tk.END,f"Treinamento concluído. Recompensas: {rewards[-1]:.2f}, Consumo: {consumptions[-1]:.2f} kWh\n",)
             self.console_output.config(state="disabled")
@@ -259,13 +272,12 @@ class EnergyManagementApp:
             self.env = EnergyManagementEnvironment(self.devices)
 
         total_consumption = 0
-        self.actions_taken = []  # Redefine a variável para armazenar as ações
-        self.device_states = {device: [] for device in self.env.devices}  # Redefine os estados
+        self.actions_taken = [] 
+        self.device_states = {device: [] for device in self.env.devices}
 
         state = self.env.reset()
 
         try:
-            # Simular 24 horas
             for step in range(24):
                 if custom_actions and step < len(custom_actions):
                     action = custom_actions[step]
@@ -279,7 +291,6 @@ class EnergyManagementApp:
                 self.actions_taken.append((step, decoded_action, consumption))
                 state = self.env.tempo
 
-                # Armazena o estado dos dispositivos a cada hora
                 for device in self.env.devices:
                     self.device_states[device].append(self.env.devices[device]["estado"])
 
@@ -365,7 +376,6 @@ class EnergyManagementApp:
         ax.legend()
         fig.tight_layout()
 
-        # Criação de uma nova janela para o gráfico
         graph_window = tk.Toplevel(self.master)
         graph_window.title("Gráfico de Simulação")
 
@@ -384,38 +394,30 @@ class EnergyManagementApp:
             messagebox.showerror("Erro", "Nenhum dado de estado dos dispositivos encontrado. Por favor, realize a simulação.")
             return
 
-        hours = range(24)  # Representando as horas do dia
+        hours = range(24)
         num_devices = len(device_states)
         states_matrix = []
 
-        # Construindo a matriz de estados para os dispositivos
         for device, states in device_states.items():
-            if len(states) != len(hours):  # Verifica se o número de estados corresponde ao número de horas
+            if len(states) != len(hours):
                 messagebox.showerror("Erro", f"Dispositivo {device} tem um número incorreto de estados. Esperado: {len(hours)}, Recebido: {len(states)}")
                 return
             states_matrix.append(states)
 
-        # Transpondo a matriz para que as horas sejam nas linhas e os dispositivos nas colunas
         states_matrix = list(map(list, zip(*states_matrix)))
+        states_array = np.array(states_matrix)
 
-        # Converte a lista de estados em um array para facilitar o empilhamento
-        states_array = np.array(states_matrix)  # Usando a importação do NumPy
-
-        # Verifica se o número de dispositivos e o número de estados estão alinhados corretamente
         if states_array.shape[0] != len(hours):
             messagebox.showerror("Erro", f"Incompatibilidade entre o número de horas ({len(hours)}) e o número de estados ({states_array.shape[0]}).")
             return
 
         fig, ax = plt.subplots(figsize=(10, 6))
-
-        bottom_states = np.zeros(len(hours))  # Base inicial para empilhar
-
+        bottom_states = np.zeros(len(hours))
         device_names = list(device_states.keys())
 
-        # Para cada dispositivo, crie uma barra que empilha seu estado
         for i in range(num_devices):
             ax.bar(hours, states_array[:, i], bottom=bottom_states, label=device_names[i])
-            bottom_states += states_array[:, i]  # Atualiza a base para o próximo dispositivo
+            bottom_states += states_array[:, i]
 
         ax.set_title("Estados dos Dispositivos ao Longo do Dia")
         ax.set_xlabel("Hora do Dia")
@@ -426,7 +428,6 @@ class EnergyManagementApp:
         ax.legend(title="Dispositivos")
         fig.tight_layout()
 
-        # Criação de uma nova janela para o gráfico
         graph_window = tk.Toplevel(self.master)
         graph_window.title("Estados dos Dispositivos")
 
@@ -441,20 +442,13 @@ class EnergyManagementApp:
         if self.q_table is None:
             self.status_label.config(text="Por favor, treine o modelo antes de visualizar a Q-table.",foreground="red")
             return
-
-        # Cria uma nova janela
+        
         q_table_window = tk.Toplevel(self.master)
         q_table_window.title("Visualização da Q-table")
-
-        # Exibe a Q-table em uma área de texto na nova janela
         q_table_text = tk.Text(q_table_window, wrap="none", height=20, width=60)
         q_table_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
-
-        # Formata a Q-table para melhor visualização
         q_table_str = "\n".join(["\t".join([f"{q:.2f}" for q in row]) for row in self.q_table])
         q_table_text.insert(tk.END, f"Q-table:\n{q_table_str}")
-
-        # Desabilita a edição no campo de texto
         q_table_text.config(state="disabled")
 
     def clear_console(self):
