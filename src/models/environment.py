@@ -3,66 +3,69 @@ class EnergyManagementEnvironment:
     Ambiente para gerenciamento de energia residencial utilizando Q-Learning.
     """
 
-    PRIORITY_DEVICES = [
+    DISPOSITIVOS_PRIORITARIOS = [
         "geladeira", "geladeira_1", "geladeira_2", "geladeira_3", "geladeira_4", "geladeira_5", "geladeira_6", "geladeira_7", "geladeira_8", 
         "Geladeira","Geladeira_1", "Geladeira_2", "Geladeira_3", "Geladeira_4", "Geladeira_5", "Geladeira_6", "Geladeira_7", "Geladeira_8",
         "frigobar", "frigobar_1", "frigobar_2", "frigobar_3", "frigobar_4", "frigobar_5", "frigobar_6", "frigobar_7", "frigobar_8",
-        "Frigobar", "Frigobar_1", "Frigobar_2", "Frigobar_3", "Frigobar_4", "Frigobar_5", "Frigobar_6", "Frigobar_7", "Frigobar_8"]
+        "Frigobar", "Frigobar_1", "Frigobar_2", "Frigobar_3", "Frigobar_4", "Frigobar_5", "Frigobar_6", "Frigobar_7", "Frigobar_8"
+    ]
 
-    def __init__(self, device_list, preco_energia=None, max_time=24,  hora_dormir=22, hora_acordar=6):
+    def __init__(self, lista_dispositivos, preco_energia=None, max_tempo=24, hora_dormir=22, hora_acordar=6):
         """
         Inicializa o ambiente com uma lista de dispositivos e preços de energia.
 
         Args:
-            device_list (list): Lista de dispositivos no formato [(nome, consumo, quantidade), ...].
+            lista_dispositivos (list): Lista de dispositivos no formato [(nome, consumo, quantidade), ...].
             preco_energia (list, optional): Lista de preços de energia por hora. Se None, usa padrão.
-            max_time (int, optional): Número máximo de etapas (horas) no ambiente.
+            max_tempo (int, optional): Número máximo de etapas (horas) no ambiente. Padrão é 24.
+            hora_dormir (int, optional): Hora de dormir. Padrão é 22.
+            hora_acordar (int, optional): Hora de acordar. Padrão é 6.
         """
-        self.devices = self.generate_devices(device_list)
+        self.dispositivos = self.gerar_dispositivos(lista_dispositivos)
         self.tempo = 0
-        self.max_time = max_time
+        self.max_tempo = max_tempo
         self.hora_dormir = hora_dormir
         self.hora_acordar = hora_acordar 
-        self.preco_energia = (preco_energia if preco_energia else [0.5 if 22 <= i < 5 else 0.2 for i in range(self.max_time)])
+        self.preco_energia = preco_energia if preco_energia else [0.5 if 22 <= i < 5 else 0.2 for i in range(self.max_tempo)]
 
-    def generate_devices(self, device_list):
+    def gerar_dispositivos(self, lista_dispositivos):
         """
         Gera um dicionário de dispositivos a partir da lista fornecida.
 
         Args:
-            device_list (list): Lista de dispositivos no formato [(nome, consumo, quantidade), ...].
+            lista_dispositivos (list): Lista de dispositivos no formato [(nome, consumo, quantidade), ...].
 
         Returns:
             dict: Dicionário de dispositivos com seus consumos e estados.
 
         Raises:
-            ValueError: Se o formato de device_list estiver incorreto ou se consumo/quantidade forem inválidos.
+            ValueError: Se o formato de lista_dispositivos estiver incorreto ou se consumo/quantidade forem inválidos.
         """
-        devices = {}
-        for device in device_list:
-            device_name, consumption, quantity = device
-            for i in range(1, quantity + 1):
-                unique_name = f"{device_name}_{i}"
-                devices[unique_name] = {"consumo": consumption, "estado": 0}
-        return devices
+        dispositivos = {}
+        for dispositivo in lista_dispositivos:
+            nome_dispositivo, consumo, quantidade = dispositivo
+            for i in range(1, quantidade + 1):
+                nome_unico = f"{nome_dispositivo}_{i}"
+                dispositivos[nome_unico] = {"consumo": consumo, "estado": 0}
+        return dispositivos
 
-    def remove_device(self, device_name):
+    def remover_dispositivo(self, nome_dispositivo):
         """
         Remove um dispositivo da lista de dispositivos.
 
         Args:
-            device_name (str): Nome do dispositivo a ser removido.
+            nome_dispositivo (str): Nome do dispositivo a ser removido.
         """
-        matching_devices = [d for d in self.devices if device_name in d]
+        dispositivos_correspondentes = [d for d in self.dispositivos if nome_dispositivo in d]
 
-        if matching_devices:
+        if dispositivos_correspondentes:
             # Remover todos os dispositivos que contenham o nome passado (para múltiplas instâncias)
-            for device in matching_devices:
-                del self.devices[device]
+            for dispositivo in dispositivos_correspondentes:
+                del self.dispositivos[dispositivo]
         else:
-            raise ValueError(f"Dispositivo {device_name} não encontrado.")
+            raise ValueError(f"Dispositivo {nome_dispositivo} não encontrado.")
 
-    def reset(self):
+    def resetar(self):
         """
         Reseta o ambiente para o estado inicial.
 
@@ -70,51 +73,51 @@ class EnergyManagementEnvironment:
             int: Estado inicial (tempo).
         """
         self.tempo = 0
-        for device in self.devices:
-            self.devices[device]["estado"] = 0
+        for dispositivo in self.dispositivos:
+            self.dispositivos[dispositivo]["estado"] = 0
         return self.tempo
 
-    def step(self, actions):
+    def executar_passos(self, acoes):
         """
         Executa uma ação no ambiente, atualizando os estados dos dispositivos e calculando recompensas.
 
         Args:
-            actions (list): Lista de estados (0 ou 1) para cada dispositivo.
+            acoes (list): Lista de estados (0 ou 1) para cada dispositivo.
 
         Returns:
             tuple: Recompensa obtida, consumo total, e flag indicando se o episódio terminou.
         """
         consumo_total = 0
-        reward = 0
+        recompensa = 0
 
-        for i, device in enumerate(self.devices):
-            if device in self.PRIORITY_DEVICES:
+        for i, dispositivo in enumerate(self.dispositivos):
+            if dispositivo in self.DISPOSITIVOS_PRIORITARIOS:
                 if self.tempo % 2 == 0:
-                    self.devices[device]["estado"] = 1
+                    self.dispositivos[dispositivo]["estado"] = 1
                 else:
-                    self.devices[device]["estado"] = 0
+                    self.dispositivos[dispositivo]["estado"] = 0
             else:
-                self.devices[device]["estado"] = actions[i]
+                self.dispositivos[dispositivo]["estado"] = acoes[i]
 
                 if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
-                    self.devices[device]["estado"] = 0
+                    self.dispositivos[dispositivo]["estado"] = 0
 
-        consumo_total += (self.devices[device]["consumo"] / 1000) * self.devices[device]["estado"]
+            consumo_total += (self.dispositivos[dispositivo]["consumo"] / 1000) * self.dispositivos[dispositivo]["estado"]
 
-        reward = 0
-        for device in self.devices:
-            if self.devices[device]["estado"] == 1:
-                if any(prio in device.lower() for prio in self.PRIORITY_DEVICES):
-                    reward += 10 
+        recompensa = 0
+        for dispositivo in self.dispositivos:
+            if self.dispositivos[dispositivo]["estado"] == 1:
+                if any(prio in dispositivo.lower() for prio in self.DISPOSITIVOS_PRIORITARIOS):
+                    recompensa += 10 
                 else:
-                    reward += 5
+                    recompensa += 5
 
         if consumo_total > 5:
-            reward -= (consumo_total - 5) * 20
+            recompensa -= (consumo_total - 5) * 20
 
         if self.tempo >= 22 or self.tempo < 5:
-            reward -= consumo_total * 15
+            recompensa -= consumo_total * 15
 
-        self.tempo = (self.tempo + 1) % self.max_time
+        self.tempo = (self.tempo + 1) % self.max_tempo
 
-        return reward, consumo_total, self.tempo == 0
+        return recompensa, consumo_total, self.tempo == 0

@@ -7,132 +7,134 @@ class QLearningAgent:
     Agente que utiliza o algoritmo Q-Learning para gerenciar o consumo de energia.
     """
 
-    def __init__(self, env, alpha=0.1, gamma=0.9, epsilon=0.2, q_table=None):
+    def __init__(self, ambiente, alfa=0.1, gama=0.9, epsilon=0.2, tabela_q=None):
         """
         Inicializa o agente com os parâmetros de aprendizado.
 
         Args:
-            env (EnergyManagementEnvironment): O ambiente de gerenciamento de energia.
-            alpha (float, optional): Taxa de aprendizado. Padrão é 0.1.
-            gamma (float, optional): Fator de desconto. Padrão é 0.9.
+            ambiente (EnergyManagementEnvironment): O ambiente de gerenciamento de energia.
+            alfa (float, optional): Taxa de aprendizado. Padrão é 0.1.
+            gama (float, optional): Fator de desconto. Padrão é 0.9.
             epsilon (float, optional): Taxa de exploração. Padrão é 0.2.
-            q_table (numpy.ndarray, optional): Tabela Q inicial. Se None, é inicializada com zeros.
+            tabela_q (numpy.ndarray, optional): Tabela Q inicial. Se None, é inicializada com zeros.
         """
-        self.env = env
-        self.alpha = alpha
-        self.gamma = gamma
+        self.ambiente = ambiente
+        self.alfa = alfa
+        self.gama = gama
         self.epsilon = epsilon
-        self.num_devices = len(self.env.devices)
-        self.num_actions = 2**self.num_devices
-        if self.num_actions > 1000:
-            raise ValueError(f"Número de ações ({self.num_actions}) é muito grande. Reduza o número de dispositivos.")
-        self.q_table = (q_table if q_table is not None else np.zeros((env.max_time, self.num_actions)))
+        self.numero_dispositivos = len(self.ambiente.dispositivos)
+        self.numero_acoes = 2**self.numero_dispositivos
+        if self.numero_acoes > 1000:
+            raise ValueError(f"Número de ações ({self.numero_acoes}) é muito grande. Reduza o número de dispositivos.")
+        self.tabela_q = tabela_q if tabela_q is not None else np.zeros((ambiente.max_tempo, self.numero_acoes))
 
-    def choose_action(self, state):
+    def escolher_ação(self, estado):
         """
         Escolhe uma ação com base na política epsilon-greedy.
 
         Args:
-            state (int): O estado atual.
+            estado (int): O estado atual.
 
         Returns:
             int: A ação escolhida.
         """
         if np.random.uniform(0, 1) < self.epsilon:
-            return np.random.randint(self.num_actions)
+            return np.random.randint(self.numero_acoes)
         else:
-            return np.argmax(self.q_table[state])
+            return np.argmax(self.tabela_q[estado])
 
-    def decode_action(self, action):
+    def decodificar_ação(self, ação):
         """
         Decodifica a ação inteira em uma lista binária representando o estado dos dispositivos.
 
         Args:
-            action (int): Ação a ser decodificada.
+            ação (int): Ação a ser decodificada.
 
         Returns:
             list: Lista de estados dos dispositivos (0 ou 1).
         """
-        return [int(x) for x in format(action, f"0{self.num_devices}b")]
+        return [int(x) for x in format(ação, f"0{self.numero_dispositivos}b")]
 
-    def update_q_table(self, state, action, reward, next_state):
+    def atualizar_tabela_q(self, estado, ação, recompensa, proximo_estado):
         """
         Atualiza a tabela Q com base na transição de estado.
 
         Args:
-            state (int): Estado atual.
-            action (int): Ação tomada.
-            reward (float): Recompensa recebida.
-            next_state (int): Próximo estado.
+            estado (int): Estado atual.
+            ação (int): Ação tomada.
+            recompensa (float): Recompensa recebida.
+            proximo_estado (int): Próximo estado.
         """
-        best_next_action = np.argmax(self.q_table[next_state])
-        self.q_table[state, action] += self.alpha * (reward + self.gamma * self.q_table[next_state, best_next_action] - self.q_table[state, action])
+        melhor_proxima_ação = np.argmax(self.tabela_q[proximo_estado])
+        self.tabela_q[estado, ação] += self.alfa * (
+            recompensa + self.gama * self.tabela_q[proximo_estado, melhor_proxima_ação] - self.tabela_q[estado, ação]
+        )
 
-    def train(self, num_episodes=5000, speed_factor=1.0):
+    def treinar(self, numero_epocas=5000, fator_velocidade=1.0):
         """
         Treina o agente usando o algoritmo Q-Learning.
 
         Args:
-            num_episodes (int, optional): Número de episódios de treinamento. Padrão é 1000.
-            speed_factor (float, optional): Fator para ajustar a velocidade do treinamento. Padrão é 1.0.
+            numero_epocas (int, optional): Número de episódios de treinamento. Padrão é 5000.
+            fator_velocidade (float, optional): Fator para ajustar a velocidade do treinamento. Padrão é 1.0.
 
         Returns:
             tuple: Listas de recompensas, consumos e a tabela Q treinada.
         """
-        all_rewards = []
-        all_consumptions = []
-        results = []
+        todas_recompensas = []
+        todos_consumos = []
+        resultados = []
 
-        episodes = math.ceil(num_episodes / speed_factor)
+        epocas = math.ceil(numero_epocas / fator_velocidade)
 
-        for episode in range(episodes):
-            state = self.env.reset()
-            done = False
-            total_reward = 0
-            total_consumption = 0
+        for epoca in range(epocas):
+            estado = self.ambiente.resetar()
+            terminado = False
+            recompensa_total = 0
+            consumo_total = 0
 
-            while not done:
-                action = self.choose_action(state)
-                decoded_action = self.decode_action(action)
-                reward, consumption, done = self.env.step(decoded_action)
-                next_state = self.env.tempo
-                self.update_q_table(state, action, reward, next_state)
-                state = next_state
-                total_reward += reward
-                total_consumption += consumption
+            while not terminado:
+                ação = self.escolher_ação(estado)
+                ação_decodificada = self.decodificar_ação(ação)
+                recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
+                proximo_estado = self.ambiente.tempo
+                self.atualizar_tabela_q(estado, ação, recompensa, proximo_estado)
+                estado = proximo_estado
+                recompensa_total += recompensa
+                consumo_total += consumo
 
-            all_rewards.append(total_reward)
-            all_consumptions.append(total_consumption)
+            todas_recompensas.append(recompensa_total)
+            todos_consumos.append(consumo_total)
 
-            results.append([episode, decoded_action, consumption, sum(all_consumptions)])
+            resultados.append([epoca, ação_decodificada, consumo, sum(todos_consumos)])
 
-            if episode % 100 == 0:
-                print(f"Episódio {episode} concluído. Recompensa: {total_reward:.2f}, Consumo: {total_consumption:.2f} kWh")
+            if epoca % 100 == 0:
+                print(f"Episódio {epoca} concluído. Recompensa: {recompensa_total:.2f}, Consumo: {consumo_total:.2f} kWh")
 
-        return all_rewards, all_consumptions, self.q_table
+        return todas_recompensas, todos_consumos, self.tabela_q
 
-    def update_num_devices(self):
+    def atualizar_numero_dispositivos(self):
         """
         Atualiza o número de dispositivos e o número de ações no agente.
         """
-        self.num_devices = len(self.env.devices)
-        self.num_actions = 2**self.num_devices
+        self.numero_dispositivos = len(self.ambiente.dispositivos)
+        self.numero_acoes = 2**self.numero_dispositivos
 
-    def simulate_day(self):
+    def simular_dia(self):
         """
         Simula o consumo de energia durante um dia (24 horas).
 
         Returns:
             tuple: Consumo total e ações tomadas durante a simulação.
         """
-        state = self.env.reset()
-        total_consumption = 0
-        actions_taken = []
-        for step in range(24):
-            action = self.choose_action(state)
-            decoded_action = self.decode_action(action)
-            reward, consumption, done = self.env.step(decoded_action)
-            total_consumption += consumption
-            actions_taken.append((step, decoded_action, consumption))
-            state = self.env.tempo
-        return total_consumption, actions_taken
+        estado = self.ambiente.resetar()
+        consumo_total = 0
+        acoes_realizadas = []
+        for passo in range(24):
+            ação = self.escolher_ação(estado)
+            ação_decodificada = self.decodificar_ação(ação)
+            recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
+            consumo_total += consumo
+            acoes_realizadas.append((passo, ação_decodificada, consumo))
+            estado = self.ambiente.tempo
+        return consumo_total, acoes_realizadas
