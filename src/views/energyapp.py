@@ -11,7 +11,6 @@ class EnergyManagementApp:
     """
     Interface gráfica para o gerenciador de energia utilizando Q-Learning.
     """
-
     def __init__(self, master):
         self.master = master
         self.agent = None
@@ -25,7 +24,6 @@ class EnergyManagementApp:
         self.device_states = {}
         self.device_quantities = ({})
         self.create_widgets()
-    
 
     def create_widgets(self):
         """
@@ -118,6 +116,12 @@ class EnergyManagementApp:
         Adiciona um novo dispositivo à lista de dispositivos.
         """
         try:
+            total_devices = sum(self.device_quantities.values())
+
+            if total_devices >= 9:
+                self.feedback_label.config(text="Erro: Limite máximo de 9 dispositivos atingido.", foreground="red")
+                return
+
             device_name = self.device_name_entry.get().strip()
             device_consumption = float(self.device_consumption_entry.get())
 
@@ -133,8 +137,7 @@ class EnergyManagementApp:
             self.device_quantities[device_name] = 1
 
             self.update_device_list()
-
-            self.feedback_label.config(text=f"Dispositivo '{device_name}' adicionado com sucesso!",foreground="green")
+            self.feedback_label.config(text=f"Dispositivo '{device_name}' adicionado com sucesso!", foreground="green")
             self.device_name_entry.delete(0, tk.END)
             self.device_consumption_entry.delete(0, tk.END)
 
@@ -168,11 +171,17 @@ class EnergyManagementApp:
 
     def increment_quantity(self, device_name):
         """
-        Incrementa a quantidade de dispositivos, até o máximo de 8.
+        Incrementa a quantidade de dispositivos, até o máximo de 8 para cada dispositivo.
+        Verifica se o total de dispositivos não ultrapassa o limite de 9.
         """
-        if self.device_quantities[device_name] < 8:
+        total_devices = sum(self.device_quantities.values())
+
+        if total_devices < 9 and self.device_quantities[device_name] < 8:
             self.device_quantities[device_name] += 1
             self.update_device_list()
+            self.feedback_label.config(text="Dispositivo adicionado com sucesso!!", foreground="green")
+        else:
+            self.feedback_label.config(text="Erro: Limite máximo de 9 dispositivos no total atingido.", foreground="red")
 
 
     def decrement_quantity(self, device_name):
@@ -182,8 +191,10 @@ class EnergyManagementApp:
         """
         if self.device_quantities[device_name] > 1:
             self.device_quantities[device_name] -= 1
+            self.feedback_label.config(text=f"Dispositivo removido com sucesso!!", foreground="green")
         else:
             self.remove_device_by_name(device_name)
+            self.feedback_label.config(text=f"Dispositivo removido com sucesso!!", foreground="green")
         self.update_device_list()
 
 
@@ -194,6 +205,7 @@ class EnergyManagementApp:
         self.devices = [device for device in self.devices if device[0] != device_name]
         del self.device_quantities[device_name]
         self.update_device_list()
+        self.feedback_label.config(text=f"Dispositivo removido com sucesso!!", foreground="green")
 
     def remove_device(self, index):
         """
@@ -316,7 +328,7 @@ class EnergyManagementApp:
         Exibe os gráficos de recompensas e consumo durante o treinamento.
         """
         if not self.rewards or not self.consumptions:
-            self.status_label.config(text="Por favor, treine o modelo antes de exibir o gráfico.", foreground="red")
+            self.status_label.config(text="Por favor, realize um treinameto antes de exibir o gráfico.", foreground="red")
             return
 
         plot_window = tk.Toplevel(self.master)
@@ -440,9 +452,9 @@ class EnergyManagementApp:
         Exibe a Q-table em uma nova janela.
         """
         if self.q_table is None:
-            self.status_label.config(text="Por favor, treine o modelo antes de visualizar a Q-table.",foreground="red")
+            self.status_label.config(text="Por favor, realize o treinamento antes de visualizar a Q-table.",foreground="red")
             return
-        
+
         q_table_window = tk.Toplevel(self.master)
         q_table_window.title("Visualização da Q-table")
         q_table_text = tk.Text(q_table_window, wrap="none", height=20, width=60)
