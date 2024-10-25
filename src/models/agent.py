@@ -70,7 +70,7 @@ class QLearningAgent:
             recompensa + self.gama * self.tabela_q[proximo_estado, melhor_proxima_ação] - self.tabela_q[estado, ação]
         )
 
-    def treinar(self, numero_epocas=5000, fator_velocidade=1.0):
+    def treinar(self, numero_epocas=1000, fator_velocidade=1.0):
         """
         Treina o agente usando o algoritmo Q-Learning.
 
@@ -108,6 +108,9 @@ class QLearningAgent:
 
             resultados.append([epoca, ação_decodificada, consumo, sum(todos_consumos)])
 
+            self.epsilon = max(0.01, self.epsilon * 0.99)
+            self.gama = min(0.95, self.gama + 0.001)
+            
             if epoca % 100 == 0:
                 print(f"Episódio {epoca} concluído. Recompensa: {recompensa_total:.2f}, Consumo: {consumo_total:.2f} kWh")
 

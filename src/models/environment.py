@@ -77,6 +77,11 @@ class EnergyManagementEnvironment:
             self.dispositivos[dispositivo]["estado"] = 0
         return self.tempo
 
+    def calcular_limite_consumo(self):
+        consumo_dispositivos = sum(dispositivo["consumo"] for dispositivo in self.dispositivos.values())
+        limite_base = consumo_dispositivos * 0.5
+        return limite_base
+
     def executar_passos(self, acoes):
         """
         Executa uma ação no ambiente, atualizando os estados dos dispositivos e calculando recompensas.
@@ -92,7 +97,7 @@ class EnergyManagementEnvironment:
 
         for i, dispositivo in enumerate(self.dispositivos):
             if dispositivo in self.DISPOSITIVOS_PRIORITARIOS:
-                if self.tempo % 2 == 0:
+                if self.tempo % 3 == 0:
                     self.dispositivos[dispositivo]["estado"] = 1
                 else:
                     self.dispositivos[dispositivo]["estado"] = 0
@@ -101,22 +106,34 @@ class EnergyManagementEnvironment:
 
                 if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
                     self.dispositivos[dispositivo]["estado"] = 0
+                else:
+                    self.dispositivos[dispositivo]["estado"] = acoes[i]
 
             consumo_total += (self.dispositivos[dispositivo]["consumo"] / 1000) * self.dispositivos[dispositivo]["estado"]
 
-        recompensa = 0
+        limite_consumo = self.calcular_limite_consumo()
+        excesso_consumo = consumo_total - limite_consumo
+        if excesso_consumo > 0:
+            if excesso_consumo < 0.5:
+                penalidade_consumo = excesso_consumo * 20 
+            elif excesso_consumo < 1.0:
+                penalidade_consumo = excesso_consumo * 40 
+            else:
+                penalidade_consumo = excesso_consumo * 60
+            recompensa -= penalidade_consumo
+        else:
+            recompensa += 20 
+
+        if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
+            if consumo_total <= limite_consumo * 0.7:
+                recompensa += 10
+
         for dispositivo in self.dispositivos:
             if self.dispositivos[dispositivo]["estado"] == 1:
                 if any(prio in dispositivo.lower() for prio in self.DISPOSITIVOS_PRIORITARIOS):
-                    recompensa += 10 
-                else:
                     recompensa += 5
-
-        if consumo_total > 5:
-            recompensa -= (consumo_total - 5) * 20
-
-        if self.tempo >= 22 or self.tempo < 5:
-            recompensa -= consumo_total * 15
+                else:
+                    recompensa += 2
 
         self.tempo = (self.tempo + 1) % self.max_tempo
 

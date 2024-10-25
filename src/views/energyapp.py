@@ -67,7 +67,7 @@ class EnergyManagementApp:
         self.botao_mostrar_tabela_q = ttk.Button(self.frame_controle, text="Mostrar Tabela Q", command=self.mostrar_tabela_q)
         self.botao_mostrar_tabela_q.grid(row=2, column=0, padx=5, pady=5, sticky="ew")
 
-        self.botao_mostrar_grafico = ttk.Button(self.frame_controle, text="Mostrar Gráficos de Treinamento", command=self.mostrar_graficos)
+        self.botao_mostrar_grafico = ttk.Button(self.frame_controle, text="Mostrar Gráficos de Treinamento", command=self.mostrar_grafico_treinamento)
         self.botao_mostrar_grafico.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
         # Área de entrada de dispositivos
@@ -326,7 +326,7 @@ class EnergyManagementApp:
             else:
                 messagebox.showerror("Erro", str(ve))
 
-    def mostrar_graficos(self):
+    def mostrar_grafico_treinamento(self):
         """
         Exibe os gráficos de recompensas e consumo durante o treinamento.
         """
@@ -341,19 +341,25 @@ class EnergyManagementApp:
 
         epocas = range(len(self.recompensas))
 
-        ax[0].plot(epocas, self.recompensas, label="Recompensa Acumulada", color="blue")
+        recompensas_suavizadas = np.convolve(self.recompensas, np.ones(10)/10, mode='valid')
+        consumos_suavizados = np.convolve(self.consumos, np.ones(10)/10, mode='valid')
+
+        ax[0].plot(epocas[:len(recompensas_suavizadas)], recompensas_suavizadas, label="Recompensa Acumulada (suavizada)", color="blue", linewidth=2)
         ax[0].set_xlabel("Episódios")
         ax[0].set_ylabel("Recompensa Total")
         ax[0].set_title("Progresso da Recompensa Durante o Treinamento")
         ax[0].grid(True)
         ax[0].legend()
 
-        ax[1].plot(epocas, self.consumos, label="Consumo de Energia", color="orange")
+        ax[1].plot(epocas[:len(consumos_suavizados)], consumos_suavizados, label="Consumo de Energia (suavizado)", color="orange", linewidth=2)
         ax[1].set_xlabel("Episódios")
         ax[1].set_ylabel("Consumo Total (kWh)")
         ax[1].set_title("Consumo de Energia Durante o Treinamento")
         ax[1].grid(True)
         ax[1].legend()
+
+        ax[0].set_ylim([min(recompensas_suavizadas) - 10, max(recompensas_suavizadas) + 10])
+        ax[1].set_ylim([min(consumos_suavizados) - 0.2, max(consumos_suavizados) + 0.2])
 
         canvas = FigureCanvasTkAgg(fig, master=janela_grafico)
         canvas.draw()
