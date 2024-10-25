@@ -10,7 +10,7 @@ class EnergyManagementEnvironment:
         "Frigobar", "Frigobar_1", "Frigobar_2", "Frigobar_3", "Frigobar_4", "Frigobar_5", "Frigobar_6", "Frigobar_7", "Frigobar_8"
     ]
 
-    def __init__(self, lista_dispositivos, preco_energia=None, max_tempo=24, hora_dormir=22, hora_acordar=6):
+    def __init__(self, lista_dispositivos, preco_energia=None, max_tempo=24, hora_dormir=None, hora_acordar=None):
         """
         Inicializa o ambiente com uma lista de dispositivos e preços de energia.
 

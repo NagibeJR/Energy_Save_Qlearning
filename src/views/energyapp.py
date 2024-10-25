@@ -29,27 +29,94 @@ class EnergyManagementApp:
         """
         Cria os widgets da interface gráfica.
         """
-        # Tornar a janela redimensionável
-        self.master.grid_rowconfigure(0, weight=1)
+        # Configuração geral da janela para ser redimensionável
+        self.master.grid_rowconfigure(0, weight=2)
         self.master.grid_rowconfigure(1, weight=1)
-        self.master.grid_rowconfigure(2, weight=1)
-        self.master.grid_rowconfigure(3, weight=1)
+        self.master.grid_rowconfigure(2, weight=0)
         self.master.grid_columnconfigure(0, weight=1)
 
-        # Frames principais
-        self.frame_controle = ttk.LabelFrame(self.master, text="Controles de Treinamento")
-        self.frame_controle.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
-        self.frame_controle.grid_columnconfigure(0, weight=1)
-        self.frame_controle.grid_columnconfigure(1, weight=1)
+        # Frame para Configurações do Ambiente
+        self.frame_configuracoes = ttk.LabelFrame(self.master, text="Configurações do Ambiente")
+        self.frame_configuracoes.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+        self.frame_configuracoes.grid_columnconfigure(1, weight=1)
 
-        self.frame_dispositivos = ttk.LabelFrame(self.master, text="Gerenciamento de Dispositivos")
-        self.frame_dispositivos.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
-        self.frame_dispositivos.grid_columnconfigure(0, weight=1)
+        # Seção "Gerenciar Horários"
+        self.frame_horarios = ttk.LabelFrame(self.frame_configuracoes, text="Gerenciar Horários", padding=(10, 5))
+        self.frame_horarios.grid(row=0, column=0, columnspan=2, padx=5, pady=10, sticky="nsew")
+        self.frame_horarios.grid_columnconfigure((1, 3), weight=1)  # Configurar colunas 1 e 3 para expansão
+
+        # Hora de Dormir
+        self.label_hora_dormir = ttk.Label(self.frame_horarios, text="Hora de Dormir (0-23):")
+        self.label_hora_dormir.grid(row=0, column=0, padx=5, pady=5, sticky="e")
+
+        self.spinbox_hora_dormir = ttk.Spinbox(self.frame_horarios, from_=0, to=23, width=5)
+        self.spinbox_hora_dormir.set(22)  # Valor padrão
+        self.spinbox_hora_dormir.grid(row=0, column=1, padx=5, pady=5, sticky="w")
+
+        # Hora de Acordar
+        self.label_hora_acordar = ttk.Label(self.frame_horarios, text="Hora de Acordar (0-23):")
+        self.label_hora_acordar.grid(row=0, column=2, padx=5, pady=5, sticky="e")
+
+        self.spinbox_hora_acordar = ttk.Spinbox(self.frame_horarios, from_=0, to=23, width=5)
+        self.spinbox_hora_acordar.set(6)  # Valor padrão
+        self.spinbox_hora_acordar.grid(row=0, column=3, padx=5, pady=5, sticky="w")
+
+        # Área de Entrada e Gerenciamento de Dispositivos
+        self.frame_dispositivos = ttk.LabelFrame(self.frame_configuracoes, text="Gerenciamento de Dispositivos", padding=(10, 5))
+        self.frame_dispositivos.grid(row=1, column=0, columnspan=2, padx=5, pady=10, sticky="nsew")
         self.frame_dispositivos.grid_columnconfigure(1, weight=1)
 
-        self.frame_console = ttk.LabelFrame(self.master, text="Console")
-        self.frame_console.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
-        self.frame_console.grid_columnconfigure(0, weight=1)
+        # Nome do dispositivo
+        self.label_nome_dispositivo = ttk.Label(self.frame_dispositivos, text="Nome do Dispositivo:")
+        self.label_nome_dispositivo.grid(row=0, column=0, padx=5, pady=5, sticky="w")
+        self.entry_nome_dispositivo = ttk.Entry(self.frame_dispositivos)
+        self.entry_nome_dispositivo.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
+        # Potência (W)
+        self.label_potencia = ttk.Label(self.frame_dispositivos, text="Potência (W):")
+        self.label_potencia.grid(row=1, column=0, padx=5, pady=5, sticky="w")
+        self.entry_potencia = ttk.Entry(self.frame_dispositivos)
+        self.entry_potencia.grid(row=1, column=1, padx=5, pady=5, sticky="ew")
+
+        # Botão Adicionar Dispositivo
+        self.botao_adicionar_dispositivo = ttk.Button(self.frame_dispositivos, text="Adicionar Dispositivo", command=self.adicionar_dispositivo)
+        self.botao_adicionar_dispositivo.grid(row=2, column=0, columnspan=2, padx=5, pady=10, sticky="ew")
+
+        # Mensagem de feedback para validação de entrada de dados
+        self.label_feedback = ttk.Label(self.frame_dispositivos, text="", foreground="red")
+        self.label_feedback.grid(row=3, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
+        # Lista de dispositivos adicionados com área de rolagem
+        self.label_lista_dispositivos = ttk.Label(self.frame_dispositivos, text="Dispositivos Adicionados:")
+        self.label_lista_dispositivos.grid(row=4, column=0, columnspan=2, padx=5, pady=5, sticky="w")
+
+        # Frame para a lista de dispositivos com scroll
+        self.frame_lista_dispositivos = ttk.Frame(self.frame_dispositivos)
+        self.frame_lista_dispositivos.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
+        self.frame_lista_dispositivos.grid_rowconfigure(0, weight=1)
+        self.frame_lista_dispositivos.grid_columnconfigure(0, weight=1)
+
+        # Canvas para rolagem
+        self.canvas_dispositivos = tk.Canvas(self.frame_lista_dispositivos, borderwidth=0, height=100)
+        self.scrollbar_dispositivos = ttk.Scrollbar(self.frame_lista_dispositivos, orient="vertical", command=self.canvas_dispositivos.yview)
+        self.scrollable_frame_dispositivos = ttk.Frame(self.canvas_dispositivos)
+
+        self.scrollable_frame_dispositivos.bind("<Configure>", lambda e: self.canvas_dispositivos.configure(scrollregion=self.canvas_dispositivos.bbox("all")))
+
+        self.canvas_dispositivos.create_window((0, 0), window=self.scrollable_frame_dispositivos, anchor="nw")
+        self.canvas_dispositivos.configure(yscrollcommand=self.scrollbar_dispositivos.set)
+
+        self.canvas_dispositivos.pack(side="left", fill="both", expand=True)
+        self.scrollbar_dispositivos.pack(side="right", fill="y")
+
+        # Inicialização da lista de widgets de dispositivos
+        self.widgets_dispositivos = []
+
+        # Frame para Controles de Treinamento e Simulação
+        self.frame_controle = ttk.LabelFrame(self.master, text="Controles de Treinamento e Simulação")
+        self.frame_controle.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+        self.frame_controle.grid_columnconfigure(0, weight=1)
+        self.frame_controle.grid_columnconfigure(1, weight=1)
 
         # Botões de controle
         self.botao_treinar_do_zero = ttk.Button(self.frame_controle, text="Treinar do Zero", command=self.treinar_do_zero)
@@ -70,58 +137,25 @@ class EnergyManagementApp:
         self.botao_mostrar_grafico = ttk.Button(self.frame_controle, text="Mostrar Gráficos de Treinamento", command=self.mostrar_grafico_treinamento)
         self.botao_mostrar_grafico.grid(row=2, column=1, padx=5, pady=5, sticky="ew")
 
-        # Área de entrada de dispositivos
-        self.frame_dispositivos.config(text="Adicionar Novo Dispositivo", padding=(10, 5))
-
-        # Nome do dispositivo
-        self.label_nome_dispositivo = ttk.Label(self.frame_dispositivos, text="Nome do Dispositivo:")
-        self.label_nome_dispositivo.grid(row=0, column=0, padx=10, pady=5, sticky="w")
-        self.entry_nome_dispositivo = ttk.Entry(self.frame_dispositivos)
-        self.entry_nome_dispositivo.grid(row=0, column=1, padx=10, pady=5, sticky="ew")
-
-        # Potência (W)
-        self.label_potencia = ttk.Label(self.frame_dispositivos, text="Potência (W):")
-        self.label_potencia.grid(row=1, column=0, padx=10, pady=5, sticky="w")
-        self.entry_potencia = ttk.Entry(self.frame_dispositivos)
-        self.entry_potencia.grid(row=1, column=1, padx=10, pady=5, sticky="ew")
-
-        # Botão Adicionar Dispositivo
-        self.botao_adicionar_dispositivo = ttk.Button(self.frame_dispositivos, text="Adicionar Dispositivo", command=self.adicionar_dispositivo)
-        self.botao_adicionar_dispositivo.grid(row=3, column=0, columnspan=2, padx=10, pady=15, sticky="ew")
-
-        # Mensagem de feedback para validação de entrada de dados
-        self.label_feedback = ttk.Label(self.frame_dispositivos, text="", foreground="red")
-        self.label_feedback.grid(row=4, column=0, columnspan=2, padx=10, pady=5, sticky="w")
-
-        # Lista de dispositivos adicionados
-        self.label_lista_dispositivos = ttk.Label(self.frame_dispositivos, text="Dispositivos Adicionados:")
-        self.label_lista_dispositivos.grid(row=5, column=0, columnspan=2, padx=5, pady=5, sticky="w")
-
-        self.frame_lista_dispositivos = ttk.Frame(self.frame_dispositivos)
-        self.frame_lista_dispositivos.grid(row=6, column=0, columnspan=2, padx=5, pady=5, sticky="nsew")
-        self.frame_lista_dispositivos.grid_columnconfigure(0, weight=1)
-
-        self.widgets_dispositivos = []
+        # Frame para Console e Status
+        self.frame_output = ttk.LabelFrame(self.master, text="Console e Status")
+        self.frame_output.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+        self.frame_output.grid_rowconfigure(0, weight=1)
+        self.frame_output.grid_columnconfigure(0, weight=1)
 
         # Console de saída
-        self.texto_console = tk.Text(self.frame_console, state="disabled", height=10, wrap="word")
-        self.texto_console.pack(padx=5, pady=5, fill=tk.BOTH, expand=True)
+        self.texto_console = tk.Text(self.frame_output, state="disabled", height=5, wrap="word")
+        self.texto_console.pack(padx=5, pady=5, fill="both", expand=True)
 
         # Status do sistema
-        self.label_status = ttk.Label(self.master, text="Status: Aguardando...", foreground="blue")
-        self.label_status.grid(row=3, column=0, padx=10, pady=10, sticky="w")
+        self.label_status = ttk.Label(self.frame_output, text="Status: Aguardando...", foreground="blue")
+        self.label_status.pack(padx=5, pady=5, anchor="w")
 
     def adicionar_dispositivo(self):
         """
         Adiciona um novo dispositivo à lista de dispositivos.
         """
         try:
-            total_dispositivos = sum(self.quantidades_dispositivos.values())
-
-            if total_dispositivos >= 9:
-                self.label_feedback.config(text="Erro: Limite máximo de 9 dispositivos atingido.", foreground="red")
-                return
-
             nome_dispositivo = self.entry_nome_dispositivo.get().strip()
             potencia_dispositivo = float(self.entry_potencia.get())
 
@@ -132,6 +166,16 @@ class EnergyManagementApp:
                 self.label_feedback.config(text="Erro: Potência deve ser um número positivo.", foreground="red")
                 return
 
+            if nome_dispositivo in self.quantidades_dispositivos:
+                self.label_feedback.config(text="Erro: Dispositivo já existe. Use os botões para alterar a quantidade.", foreground="red")
+                return
+
+            total_dispositivos = sum(self.quantidades_dispositivos.values())
+            if total_dispositivos + 1 > 9:
+                self.label_feedback.config(text="Erro: Limite máximo de 9 dispositivos no total atingido.", foreground="red")
+                return
+
+            # Adicionar o novo dispositivo com quantidade 1
             dispositivo = (nome_dispositivo, potencia_dispositivo, 1)
             self.dispositivos.append(dispositivo)
             self.quantidades_dispositivos[nome_dispositivo] = 1
@@ -148,6 +192,7 @@ class EnergyManagementApp:
         """
         Atualiza a lista de dispositivos na interface gráfica.
         """
+        # Limpar widgets anteriores
         for widget in self.widgets_dispositivos:
             widget.destroy()
         self.widgets_dispositivos = []
@@ -157,26 +202,19 @@ class EnergyManagementApp:
 
             self.dispositivos[i] = (nome_dispositivo, potencia, quantidade)
 
-            label_dispositivo = ttk.Label(
-                self.frame_lista_dispositivos,
-                text=f"{nome_dispositivo} | Potência: {potencia} W | Quantidade: {quantidade}"
-            )
-            label_dispositivo.grid(row=i, column=0, padx=5, pady=2, sticky="w")
-            botao_incrementar = ttk.Button(
-                self.frame_lista_dispositivos,
-                text="+",
-                command=lambda nome=nome_dispositivo: self.incrementar_quantidade(nome)
-            )
-            botao_incrementar.grid(row=i, column=1, padx=5, pady=2, sticky="e")
+            frame_dispositivo = ttk.Frame(self.scrollable_frame_dispositivos)
+            frame_dispositivo.pack(fill="x", padx=5, pady=2)
 
-            botao_decrementar = ttk.Button(
-                self.frame_lista_dispositivos,
-                text="-",
-                command=lambda nome=nome_dispositivo: self.decrementar_quantidade(nome)
-            )
-            botao_decrementar.grid(row=i, column=2, padx=5, pady=2, sticky="e")
+            label_dispositivo = ttk.Label( frame_dispositivo, text=f"{nome_dispositivo} | Potência: {potencia} W | Quantidade: {quantidade}")
+            label_dispositivo.pack(side="left", padx=(0, 10))
 
-            self.widgets_dispositivos.extend([label_dispositivo, botao_incrementar, botao_decrementar])
+            botao_incrementar = ttk.Button( frame_dispositivo, text="+", width=3, command=lambda nome=nome_dispositivo: self.incrementar_quantidade(nome))
+            botao_incrementar.pack(side="left", padx=(0, 5))
+
+            botao_decrementar = ttk.Button(frame_dispositivo, text="-", width=3, command=lambda nome=nome_dispositivo: self.decrementar_quantidade(nome))
+            botao_decrementar.pack(side="left")
+
+            self.widgets_dispositivos.append(frame_dispositivo)
 
     def incrementar_quantidade(self, nome_dispositivo):
         """
@@ -188,9 +226,12 @@ class EnergyManagementApp:
         if total_dispositivos < 9 and self.quantidades_dispositivos[nome_dispositivo] < 8:
             self.quantidades_dispositivos[nome_dispositivo] += 1
             self.atualizar_lista_dispositivos()
-            self.label_feedback.config(text="Dispositivo adicionado com sucesso!", foreground="green")
+            self.label_feedback.config(text="Quantidade do dispositivo incrementada com sucesso!", foreground="green")
         else:
-            self.label_feedback.config(text="Erro: Limite máximo de 9 dispositivos no total atingido.", foreground="red")
+            if self.quantidades_dispositivos[nome_dispositivo] >= 8:
+                self.label_feedback.config(text="Erro: Limite máximo de 8 unidades para este dispositivo.", foreground="red")
+            else:
+                self.label_feedback.config(text="Erro: Limite máximo de 9 dispositivos no total atingido.", foreground="red")
 
     def decrementar_quantidade(self, nome_dispositivo):
         """
@@ -199,7 +240,7 @@ class EnergyManagementApp:
         """
         if self.quantidades_dispositivos[nome_dispositivo] > 1:
             self.quantidades_dispositivos[nome_dispositivo] -= 1
-            self.label_feedback.config(text="Dispositivo removido com sucesso!", foreground="green")
+            self.label_feedback.config(text="Quantidade do dispositivo decrementada com sucesso!", foreground="green")
         else:
             self.remover_dispositivo_por_nome(nome_dispositivo)
             self.label_feedback.config(text="Dispositivo removido com sucesso!", foreground="green")
@@ -260,8 +301,17 @@ class EnergyManagementApp:
             self.label_status.config(text="Adicione pelo menos um dispositivo.", foreground="red")
             return
 
+        try:
+            hora_dormir = int(self.spinbox_hora_dormir.get())
+            hora_acordar = int(self.spinbox_hora_acordar.get())
+            if hora_dormir == hora_acordar:
+                raise ValueError("Hora de dormir e acordar não podem ser iguais.")
+        except ValueError as ve:
+            messagebox.showerror("Erro de Validação", f"Valores inválidos para horas: {ve}")
+            return
+
         self.limpar_console()
-        self.ambiente = EnergyManagementEnvironment(self.dispositivos)
+        self.ambiente = EnergyManagementEnvironment(lista_dispositivos=self.dispositivos, hora_dormir=hora_dormir, hora_acordar=hora_acordar)
         self.agente = QLearningAgent(self.ambiente, tabela_q=self.tabela_q)
         self.agente.atualizar_numero_dispositivos()
 
