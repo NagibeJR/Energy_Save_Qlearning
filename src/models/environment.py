@@ -3,12 +3,7 @@ class EnergyManagementEnvironment:
     Ambiente para gerenciamento de energia residencial utilizando Q-Learning.
     """
 
-    DISPOSITIVOS_PRIORITARIOS = [
-        "geladeira", "geladeira_1", "geladeira_2", "geladeira_3", "geladeira_4", "geladeira_5", "geladeira_6", "geladeira_7", "geladeira_8", 
-        "Geladeira","Geladeira_1", "Geladeira_2", "Geladeira_3", "Geladeira_4", "Geladeira_5", "Geladeira_6", "Geladeira_7", "Geladeira_8",
-        "frigobar", "frigobar_1", "frigobar_2", "frigobar_3", "frigobar_4", "frigobar_5", "frigobar_6", "frigobar_7", "frigobar_8",
-        "Frigobar", "Frigobar_1", "Frigobar_2", "Frigobar_3", "Frigobar_4", "Frigobar_5", "Frigobar_6", "Frigobar_7", "Frigobar_8"
-    ]
+    DISPOSITIVOS_PRIORITARIOS = ["geladeira", "frigobar"]
 
     def __init__(self, lista_dispositivos, preco_energia=None, max_tempo=24, hora_dormir=None, hora_acordar=None):
         """
@@ -96,7 +91,7 @@ class EnergyManagementEnvironment:
         recompensa = 0
 
         for i, dispositivo in enumerate(self.dispositivos):
-            if dispositivo in self.DISPOSITIVOS_PRIORITARIOS:
+            if any(prio in dispositivo.lower() for prio in self.DISPOSITIVOS_PRIORITARIOS):
                 if self.tempo % 3 == 0:
                     self.dispositivos[dispositivo]["estado"] = 1
                 else:
@@ -104,7 +99,12 @@ class EnergyManagementEnvironment:
             else:
                 self.dispositivos[dispositivo]["estado"] = acoes[i]
 
-                if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
+                if self.hora_dormir < self.hora_acordar:
+                    desligar = self.hora_dormir <= self.tempo <= self.hora_acordar
+                else:
+                    desligar = self.tempo >= self.hora_dormir or self.tempo <= self.hora_acordar
+
+                if desligar:
                     self.dispositivos[dispositivo]["estado"] = 0
                 else:
                     self.dispositivos[dispositivo]["estado"] = acoes[i]

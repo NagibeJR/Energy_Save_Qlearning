@@ -43,14 +43,14 @@ class EnergyManagementApp:
         # Seção "Gerenciar Horários"
         self.frame_horarios = ttk.LabelFrame(self.frame_configuracoes, text="Gerenciar Horários", padding=(10, 5))
         self.frame_horarios.grid(row=0, column=0, columnspan=2, padx=5, pady=10, sticky="nsew")
-        self.frame_horarios.grid_columnconfigure((1, 3), weight=1)  # Configurar colunas 1 e 3 para expansão
+        self.frame_horarios.grid_columnconfigure((1, 3), weight=1)
 
         # Hora de Dormir
         self.label_hora_dormir = ttk.Label(self.frame_horarios, text="Hora de Dormir (0-23):")
         self.label_hora_dormir.grid(row=0, column=0, padx=5, pady=5, sticky="e")
 
         self.spinbox_hora_dormir = ttk.Spinbox(self.frame_horarios, from_=0, to=23, width=5)
-        self.spinbox_hora_dormir.set(22)  # Valor padrão
+        self.spinbox_hora_dormir.set(22)
         self.spinbox_hora_dormir.grid(row=0, column=1, padx=5, pady=5, sticky="w")
 
         # Hora de Acordar
@@ -58,7 +58,7 @@ class EnergyManagementApp:
         self.label_hora_acordar.grid(row=0, column=2, padx=5, pady=5, sticky="e")
 
         self.spinbox_hora_acordar = ttk.Spinbox(self.frame_horarios, from_=0, to=23, width=5)
-        self.spinbox_hora_acordar.set(6)  # Valor padrão
+        self.spinbox_hora_acordar.set(6)
         self.spinbox_hora_acordar.grid(row=0, column=3, padx=5, pady=5, sticky="w")
 
         # Área de Entrada e Gerenciamento de Dispositivos
@@ -192,7 +192,6 @@ class EnergyManagementApp:
         """
         Atualiza a lista de dispositivos na interface gráfica.
         """
-        # Limpar widgets anteriores
         for widget in self.widgets_dispositivos:
             widget.destroy()
         self.widgets_dispositivos = []
