@@ -13,6 +13,8 @@ class EnergyManagementApp:
     """
     def __init__(self, master):
         self.master = master
+        self.master.title("Energy Save")
+        self.master.configure(bg="#B0C4DE")
         self.agente = None
         self.tabela_q = None
         self.dispositivos = []
@@ -29,6 +31,7 @@ class EnergyManagementApp:
         """
         Cria os widgets da interface gráfica.
         """
+
         # Configuração geral da janela para ser redimensionável
         self.master.grid_rowconfigure(0, weight=2)
         self.master.grid_rowconfigure(1, weight=1)

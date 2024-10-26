@@ -4,7 +4,6 @@ import tkinter as tk
 
 def main():
     root = tk.Tk()
-    root.title("Gerenciador de Energia com Q-learning")
     EnergyManagementApp(root)
     root.mainloop()
 
