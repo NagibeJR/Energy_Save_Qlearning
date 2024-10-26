@@ -8,12 +8,11 @@ Este projeto implementa um gerenciador de energia utilizando a técnica de apren
 - **Simulação de Ambiente com Dispositivos**: Controle dispositivos como ar-condicionado, lâmpadas e outros eletrodomésticos, definindo o consumo de energia de cada um.
 - **Treinamento com Q-learning**: O sistema utiliza um agente de Q-learning para aprender a melhor maneira de controlar os dispositivos de acordo com as variações de preços de energia ao longo do dia.
 - **Simulação de Consumo Diário**: Após o treinamento, o modelo pode simular o consumo de energia em um dia completo com base nas ações aprendidas.
+- **Gráficos de Simulação**: O projeto exibe gráficos em uma janela separada mostrando a simulação durante um dia com o ambiente sendo gerenciado a partir do agente durante o treinamento.
 - **Gráficos de Recompensa e Consumo**: O projeto exibe gráficos em uma janela separada mostrando o progresso do agente durante o treinamento.
-- **Exportar Resultados**: O resultado da simulação diária pode ser exportado para um arquivo CSV para posterior análise.
 
 ## Tecnologias Utilizadas
 - **Tkinter:** Biblioteca padrão para a criação de interfaces gráficas (GUI) em Python.
-- **Pandas:** Utilizada para manipulação e análise de dados, especialmente para exportar resultados de simulações para CSV.
 - **Matplotlib:** Usada para a criação de gráficos e visualização de dados.
 - **Seaborn:** Biblioteca baseada no Matplotlib para criar visualizações estatísticas de forma mais atraente.
 - **NumPy:** Biblioteca para suporte a arrays e operações matemáticas de alto desempenho, usada para operações matriciais e cálculos numéricos.
