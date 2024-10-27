@@ -178,7 +178,6 @@ class EnergyManagementApp:
                 self.label_feedback.config(text="Erro: Limite máximo de 9 dispositivos no total atingido.", foreground="red")
                 return
 
-            # Adicionar o novo dispositivo com quantidade 1
             dispositivo = (nome_dispositivo, potencia_dispositivo, 1)
             self.dispositivos.append(dispositivo)
             self.quantidades_dispositivos[nome_dispositivo] = 1
@@ -335,7 +334,7 @@ class EnergyManagementApp:
 
     def simular_dia(self, acoes_personalizadas=None):
         """
-        Simula o consumo de energia durante um dia.
+        Simula o consumo de energia durante um dia com o agente q learnig treinado.
         """
         if self.tabela_q is None:
             self.label_status.config(text="Por favor, treine o modelo antes de simular.", foreground="red")
@@ -358,7 +357,7 @@ class EnergyManagementApp:
                     ação = self.agente.escolher_ação(estado)
 
                 ação_decodificada = self.agente.decodificar_ação(ação)
-                recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
+                consumo = self.ambiente.executar_passos(ação_decodificada)
                 consumo_total += consumo
 
                 self.acoes_realizadas.append((passo, ação_decodificada, consumo))

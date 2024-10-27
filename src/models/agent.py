@@ -125,7 +125,7 @@ class QLearningAgent:
 
     def simular_dia(self):
         """
-        Simula o consumo de energia durante um dia (24 horas).
+        Simula o consumo de energia durante um dia para treinamento do QLearning.
 
         Returns:
             tuple: Consumo total e ações tomadas durante a simulação.
@@ -136,7 +136,7 @@ class QLearningAgent:
         for passo in range(24):
             ação = self.escolher_ação(estado)
             ação_decodificada = self.decodificar_ação(ação)
-            recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
+            consumo = self.ambiente.executar_passos(ação_decodificada)
             consumo_total += consumo
             acoes_realizadas.append((passo, ação_decodificada, consumo))
             estado = self.ambiente.tempo

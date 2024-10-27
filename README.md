@@ -14,7 +14,6 @@ Este projeto implementa um gerenciador de energia utilizando a técnica de apren
 ## Tecnologias Utilizadas
 - **Tkinter:** Biblioteca padrão para a criação de interfaces gráficas (GUI) em Python.
 - **Matplotlib:** Usada para a criação de gráficos e visualização de dados.
-- **Seaborn:** Biblioteca baseada no Matplotlib para criar visualizações estatísticas de forma mais atraente.
 - **NumPy:** Biblioteca para suporte a arrays e operações matemáticas de alto desempenho, usada para operações matriciais e cálculos numéricos.
 
 ## Estrutura do Projeto
@@ -24,7 +23,6 @@ energy_management_qlearning_project/
 │
 ├── src/
 │   ├── models/
-│   │   ├── actions.py
 │   │   ├── agent.py
 │   │   └── environment.py
 │   │
@@ -83,8 +81,9 @@ energy_management_qlearning_project/
 ## Como Usar
 
 1. **Adicionar Dispositivos**:
-   - Na interface, insira o nome do dispositivo, o consumo de energia (em W) e a quantidade.
+   - Na interface, escholha a faixa de horário de sono e insira o nome do dispositivo, o consumo de energia (em W).
    - Clique em "Adicionar Dispositivo" para incluí-lo na lista de dispositivos a serem gerenciados.
+   - Se preciso mais de um dispositivo do mesmo tipo clique no "+", se preciso remover clique ""
 
 2. **Treinamento**:
    - Para iniciar o treinamento do zero, clique em "Treinar do Zero". Caso já exista uma tabela Q salva, você pode clicar em "Continuar Treinamento" para prosseguir de onde parou.
@@ -95,9 +94,6 @@ energy_management_qlearning_project/
 
 4. **Visualizar Gráficos**:
    - Para observar o desempenho do treinamento, clique em "Exibir Gráfico". Uma nova janela será aberta com gráficos que mostram a recompensa acumulada e o consumo de energia ao longo dos episódios.
-
-5. **Exportar Resultados da Simulação**:
-   - Após a simulação, clique em "Exportar Resultados" para salvar os resultados em um arquivo CSV, permitindo uma análise posterior.
 
 ## Estrutura da Interface
 
