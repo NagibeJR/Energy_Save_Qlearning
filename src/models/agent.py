@@ -136,7 +136,7 @@ class QLearningAgent:
         for passo in range(24):
             ação = self.escolher_ação(estado)
             ação_decodificada = self.decodificar_ação(ação)
-            consumo = self.ambiente.executar_passos(ação_decodificada)
+            recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
             consumo_total += consumo
             acoes_realizadas.append((passo, ação_decodificada, consumo))
             estado = self.ambiente.tempo

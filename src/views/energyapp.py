@@ -357,7 +357,7 @@ class EnergyManagementApp:
                     ação = self.agente.escolher_ação(estado)
 
                 ação_decodificada = self.agente.decodificar_ação(ação)
-                consumo = self.ambiente.executar_passos(ação_decodificada)
+                recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
                 consumo_total += consumo
 
                 self.acoes_realizadas.append((passo, ação_decodificada, consumo))
