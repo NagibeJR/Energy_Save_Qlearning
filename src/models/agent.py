@@ -70,7 +70,7 @@ class QLearningAgent:
             recompensa + self.gama * self.tabela_q[proximo_estado, melhor_proxima_ação] - self.tabela_q[estado, ação]
         )
 
-    def treinar(self, numero_epocas=1000, fator_velocidade=1.0):
+    def treinar(self, numero_epocas=10000, fator_velocidade=1.0):
         """
         Treina o agente usando o algoritmo Q-Learning.
 
@@ -122,22 +122,3 @@ class QLearningAgent:
         """
         self.numero_dispositivos = len(self.ambiente.dispositivos)
         self.numero_acoes = 2**self.numero_dispositivos
-
-    def simular_dia(self):
-        """
-        Simula o consumo de energia durante um dia para treinamento do QLearning.
-
-        Returns:
-            tuple: Consumo total e ações tomadas durante a simulação.
-        """
-        estado = self.ambiente.resetar()
-        consumo_total = 0
-        acoes_realizadas = []
-        for passo in range(24):
-            ação = self.escolher_ação(estado)
-            ação_decodificada = self.decodificar_ação(ação)
-            recompensa, consumo, terminado = self.ambiente.executar_passos(ação_decodificada)
-            consumo_total += consumo
-            acoes_realizadas.append((passo, ação_decodificada, consumo))
-            estado = self.ambiente.tempo
-        return consumo_total, acoes_realizadas

@@ -115,18 +115,23 @@ class EnergyManagementEnvironment:
         excesso_consumo = consumo_total - limite_consumo
         if excesso_consumo > 0:
             if excesso_consumo < 0.5:
-                penalidade_consumo = excesso_consumo * 20 
+                penalidade_consumo = excesso_consumo * 15 
             elif excesso_consumo < 1.0:
-                penalidade_consumo = excesso_consumo * 40 
+                penalidade_consumo = excesso_consumo * 30 
             else:
-                penalidade_consumo = excesso_consumo * 60
+                penalidade_consumo = excesso_consumo * 50
             recompensa -= penalidade_consumo
         else:
-            recompensa += 20 
+            recompensa += 30 
 
         if self.hora_dormir <= self.tempo or self.tempo < self.hora_acordar:
             if consumo_total <= limite_consumo * 0.7:
                 recompensa += 10
+
+        if consumo_total < limite_consumo:
+            fator_recompensa = 0.05
+            economia = limite_consumo - consumo_total
+            recompensa += economia * fator_recompensa
 
         for dispositivo in self.dispositivos:
             if self.dispositivos[dispositivo]["estado"] == 1:
