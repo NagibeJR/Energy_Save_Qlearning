@@ -83,7 +83,7 @@ energy_management_qlearning_project/
 1. **Adicionar Dispositivos**:
    - Na interface, escholha a faixa de horário de sono e insira o nome do dispositivo, o consumo de energia (em W).
    - Clique em "Adicionar Dispositivo" para incluí-lo na lista de dispositivos a serem gerenciados.
-   - Se preciso mais de um dispositivo do mesmo tipo clique no "+", se preciso remover clique ""
+   - Se preciso mais de um dispositivo do mesmo tipo clique no "+", se preciso remover clique "-"
 
 2. **Treinamento**:
    - Para iniciar o treinamento do zero, clique em "Treinar do Zero". Caso já exista uma tabela Q salva, você pode clicar em "Continuar Treinamento" para prosseguir de onde parou.
