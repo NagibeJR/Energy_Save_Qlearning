@@ -50,8 +50,8 @@ energy_management_qlearning_project/
    - Clone o repositório ou faça o download dos arquivos.
 
    ```bash
-   git clone https://github.com/NagibeJR/Qlearnig_Project
-   cd Qlearnig_Project
+   git clone https://github.com/NagibeJR/Energy_Save_Qlearning
+   cd Energy_Save_Qlearning
    ```
 
 2. **Crie e Ative um Ambiente Virtual (Opcional, mas Recomendado)**:
