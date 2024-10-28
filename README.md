@@ -81,7 +81,7 @@ energy_management_qlearning_project/
 ## Como Usar
 
 1. **Adicionar Dispositivos**:
-   - Na interface, escholha a faixa de horário de sono e insira o nome do dispositivo, o consumo de energia (em W).
+   - Na interface, escolha a faixa de horário de sono e insira o nome do dispositivo, o consumo de energia (em W).
    - Clique em "Adicionar Dispositivo" para incluí-lo na lista de dispositivos a serem gerenciados.
    - Se preciso mais de um dispositivo do mesmo tipo clique no "+", se preciso remover clique "-"
 
